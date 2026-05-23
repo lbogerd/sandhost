@@ -1,0 +1,11 @@
+{
+  "name": "sandhost",
+  "version": "0.0.1",
+  "description": "distributed sandbox hosting with microsandboxes",
+  "scripts": {},
+  "author": "wtrn.dev",
+  "packageManager": "pnpm@10.32.1",
+  "devDependencies": {
+    "turbo": "catalog:"
+  }
+}

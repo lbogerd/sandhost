@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+catalog:
+  turbo: 2.9.14
+
+catalogMode: prefer
+
+# minimum age in minutes, 48h in this case
+minimumReleaseAge: 2880
