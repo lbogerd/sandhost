@@ -9,8 +9,6 @@ services:
       POSTGRES_PASSWORD: sandhost_password
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U control_api -d control_api_dev"]
       interval: 5s

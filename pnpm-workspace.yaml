@@ -2,9 +2,11 @@ packages:
   - apps/*
   - packages/*
 catalog:
+  oxfmt: 0.51.0
+  oxlint: 1.66.0
   turbo: 2.9.14
 
 catalogMode: prefer
 
-# minimum age in minutes, 48h in this case
+# 48h in minutes
 minimumReleaseAge: 2880
