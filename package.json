@@ -10,11 +10,11 @@
 		"dev:web": "turbo dev --filter=@wtrn/web",
 		"dev:runner": "turbo dev --filter=@wtrn/runner",
 		"check": "oxlint --fix && oxfmt",
-		"db:generate": "pnpm --filter @wtrn/db db:generate",
-		"db:migrate": "pnpm --filter @wtrn/db db:migrate",
+		"db:push": "pnpm --filter @wtrn/db db:push",
+		"db:seed": "pnpm --filter @wtrn/db db:seed",
 		"db:studio": "pnpm --filter @wtrn/db db:studio",
-		"postgres:up": "docker compose up -d postgres",
-		"postgres:down": "docker compose down"
+		"pg:up": "docker compose up -d postgres",
+		"pg:down": "docker compose down"
 	},
 	"devDependencies": {
 		"oxfmt": "catalog:",

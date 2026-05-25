@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U control_api -d control_api_dev"]
+      test: ["CMD-SHELL", "pg_isready -U sandhost_user -d sandhost_db"]
       interval: 5s
       timeout: 5s
       retries: 10
