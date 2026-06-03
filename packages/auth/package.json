@@ -6,6 +6,7 @@
 	},
 	"dependencies": {
 		"@wtrn/db": "workspace:*",
+		"@wtrn/db-schema": "workspace:*",
 		"better-auth": "catalog:",
 		"zod": "catalog:"
 	},

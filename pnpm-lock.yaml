@@ -105,6 +105,9 @@ importers:
       '@wtrn/db':
         specifier: workspace:*
         version: link:../db
+      '@wtrn/db-schema':
+        specifier: workspace:*
+        version: link:../db-schema
       better-auth:
         specifier: 'catalog:'
         version: 1.6.11(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.28.17)(pg@8.21.0))(pg@8.21.0)

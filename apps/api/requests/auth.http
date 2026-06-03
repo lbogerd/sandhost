@@ -1,0 +1,16 @@
+@host = http://localhost:4000
+
+###
+# @name createUser
+
+POST {{host}}/create-test-user
+
+###
+# @name login
+
+POST {{host}}/login-test
+
+{
+	"email": "{{createUser.response.body.user.user.email}}",
+	"password": "{{createUser.response.body.password}}"
+}
