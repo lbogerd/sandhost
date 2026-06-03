@@ -1,10 +1,13 @@
 packages:
   - apps/*
   - packages/*
+allowBuilds:
+  esbuild: true
 catalog:
   "@hono/node-server": 2.0.4
   "@t3-oss/env-core": 0.13.11
   "@types/node": 24.12.4
+  better-auth: 1.6.11
   dotenv: 17.4.2
   drizzle-kit: 0.31.10
   drizzle-orm: 0.45.2
@@ -12,8 +15,8 @@ catalog:
   oxfmt: 0.51.0
   oxlint: 1.66.0
   pg: 8.21.0
-  turbo: 2.9.14
   tsx: 4.22.3
+  turbo: 2.9.14
   typescript: 6.0.3
   zod: 4.4.3
 

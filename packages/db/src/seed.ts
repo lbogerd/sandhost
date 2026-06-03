@@ -1,5 +1,4 @@
 import { db } from "./db-client.ts"
-import { runnersTable, sandboxBlueprintsTable, teamsTable, usersTable } from "@wtrn/db-schema"
 
 async function main() {
 	const fakeUser = await db

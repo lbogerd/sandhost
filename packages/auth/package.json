@@ -1,0 +1,15 @@
+{
+	"name": "@wtrn/auth",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"dependencies": {
+		"@wtrn/db": "workspace:*",
+		"better-auth": "catalog:",
+		"zod": "catalog:"
+	},
+	"exports": {
+		".": "./src/auth.ts"
+	}
+}

@@ -2,6 +2,9 @@
 	"name": "@wtrn/db",
 	"version": "0.0.1",
 	"type": "module",
+	"exports": {
+		".": "./src/db-client.ts"
+	},
 	"scripts": {
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
