@@ -1,4 +1,4 @@
-@host = http://localhost:4000
+@host = http://localhost:4000/api
 
 ###
 # @name createUser
@@ -7,10 +7,16 @@ POST {{host}}/create-test-user
 
 ###
 # @name login
-
-POST {{host}}/login-test
+POST {{host}}/auth/sign-in/email
+Content-Type: application/json
 
 {
 	"email": "{{createUser.response.body.user.user.email}}",
 	"password": "{{createUser.response.body.password}}"
 }
+
+###
+# @name sessionTest
+
+GET {{host}}/session-test
+Cookie: {{login.response.headers.set-cookie}}

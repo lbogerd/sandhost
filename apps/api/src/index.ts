@@ -2,28 +2,25 @@ import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { auth } from "./auth.ts"
 import { env } from "./env.ts"
+import { cors } from "hono/cors"
 
 const app = new Hono()
+
+app.use("/api/*", cors({
+		origin: "http://localhost:4000", // replace with your origin
+		allowHeaders: ["Content-Type", "Authorization"],
+		allowMethods: ["POST", "GET", "OPTIONS"],
+		exposeHeaders: ["Content-Length"],
+		maxAge: 600,
+		credentials: true,
+	})
+)
 
 app.get("/", (c) => {
 	return c.text("Hello Hono!")
 })
 
-app.get("/auth-test", async (c) => {
-	const session = await auth.api.getSession({ headers: c.req.raw.headers })
-
-	if (!session) {
-		return c.json({ ok: false, message: "Unauthorized" }, 401)
-	}
-
-	return c.json({
-		ok: true,
-		message: "auth-test route works",
-		user: session.user,
-	})
-})
-
-app.post("/create-test-user", async (c) => {
+app.post("/api/create-test-user", async (c) => {
 	const password = Math.random().toString(36).slice(-8)
 
 	try {
@@ -42,27 +39,30 @@ app.post("/create-test-user", async (c) => {
 	}
 })
 
-app.post("/login-test", async (c) => {
-	const { email, password } = await c.req.json()
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+	return auth.handler(c.req.raw);
+});
 
-	if (!email) {
-		return c.json({ ok: false, message: "Email is required" }, 400)
+app.get("/api/session-test", async (c) => {
+	const session = await auth.api.getSession({
+		headers: c.req.raw.headers,
+	})
+
+	if (!session) {
+		return c.json(
+			{
+				ok: false,
+				message: "Unauthorized",
+			},
+			401,
+		)
 	}
 
-	try {
-		const session = await auth.api.signInEmail({
-			body: { email, password },
-		})
-
-		if (!session) {
-			return c.json({ ok: false, message: "Invalid credentials" }, 401)
-		}
-
-		return c.json({ ok: true, message: "Login successful", session })
-	} catch (error) {
-		console.error("Error during login:", error)
-		return c.json({ ok: false, message: "Login failed", error }, 500)
-	}
+	return c.json({
+		ok: true,
+		message: "Authenticated request",
+		session,
+	})
 })
 
 serve(
