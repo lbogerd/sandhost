@@ -1,0 +1,14 @@
+{
+	"name": "@wtrn/components",
+	"version": "0.0.1",
+	"type": "module",
+	"exports": {
+		".": "./src/components.tsx"
+	},
+	"peerDependencies": {
+		"react": "catalog:"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:"
+	}
+}
