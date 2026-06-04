@@ -9,8 +9,9 @@
 	"dependencies": {
 		"@hono/node-server": "catalog:",
 		"@t3-oss/env-core": "catalog:",
-		"@wtrn/db": "workspace:*",
 		"@wtrn/auth": "workspace:*",
+		"@wtrn/db": "workspace:*",
+		"@wtrn/db-schema": "workspace:*",
 		"dotenv": "catalog:",
 		"hono": "catalog:",
 		"zod": "catalog:"

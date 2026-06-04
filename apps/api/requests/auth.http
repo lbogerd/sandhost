@@ -1,4 +1,5 @@
-@host = http://localhost:4000/api
+@origin = http://localhost:4000
+@host = {{origin}}/api
 
 ###
 # @name createUser
@@ -9,6 +10,7 @@ POST {{host}}/create-test-user
 # @name login
 POST {{host}}/auth/sign-in/email
 Content-Type: application/json
+Origin: {{origin}}
 
 {
 	"email": "{{createUser.response.body.user.user.email}}",
@@ -20,3 +22,19 @@ Content-Type: application/json
 
 GET {{host}}/auth/get-session
 Cookie: {{login.response.headers.set-cookie}}
+
+###
+# @name logout
+
+POST {{host}}/auth/sign-out
+Cookie: {{login.response.headers.set-cookie}}
+Content-Type: application/json
+Origin: {{origin}}
+
+{}
+
+###
+# @name deleteTestUsers
+
+POST {{host}}/delete-test-users
+

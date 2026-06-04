@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { organization } from "better-auth/plugins"
+import { admin, organization } from "better-auth/plugins"
 import { db } from "@wtrn/db"
 import * as schema from "@wtrn/db-schema"
 
@@ -20,6 +20,6 @@ export const auth = ({
 		emailAndPassword: {
 			enabled: true,
 		},
-		plugins: [organization()],
+		plugins: [admin(), organization()],
 		secret: betterAuthSecret,
 	})

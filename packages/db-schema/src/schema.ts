@@ -1,6 +1,8 @@
 import { relations } from "drizzle-orm"
 import { pgTable, varchar, text, timestamp, boolean, index } from "drizzle-orm/pg-core"
 
+export * from "drizzle-orm"
+
 const timestampTz = (
 	name: string,
 	options: Parameters<typeof timestamp>[1] = {
@@ -72,6 +74,10 @@ export const user = pgTable("user", {
 	email: text("email").notNull().unique(),
 	emailVerified: boolean("email_verified").default(false).notNull(),
 	image: text("image"),
+	role: text("role"),
+	banned: boolean("banned"),
+	banReason: text("ban_reason"),
+	banExpires: timestampTz("ban_expires"),
 	createdAt,
 	updatedAt,
 })
@@ -91,6 +97,7 @@ export const session = pgTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 		activeOrganizationId: text("active_organization_id"),
 		activeTeamId: text("active_team_id"),
+		impersonatedBy: text("impersonated_by"),
 	},
 	(table) => [index("session_userId_idx").on(table.userId)],
 )

@@ -3,17 +3,21 @@ import { Hono } from "hono"
 import { auth } from "./auth.ts"
 import { env } from "./env.ts"
 import { cors } from "hono/cors"
+import { db } from "@wtrn/db"
+import { like, user } from "@wtrn/db-schema"
 
 const app = new Hono()
 
-app.use("/api/*", cors({
-		origin: "http://localhost:4000", // replace with your origin
+app.use(
+	"/api/*",
+	cors({
+		origin: (origin) => origin ?? "*",
 		allowHeaders: ["Content-Type", "Authorization"],
 		allowMethods: ["POST", "GET", "OPTIONS"],
 		exposeHeaders: ["Content-Length"],
 		maxAge: 600,
 		credentials: true,
-	})
+	}),
 )
 
 app.get("/", (c) => {
@@ -39,9 +43,23 @@ app.post("/api/create-test-user", async (c) => {
 	}
 })
 
+app.post("/api/delete-test-users", async (c) => {
+	try {
+		const deletedUsers = await db
+			.delete(user)
+			.where(like(user.email, "%@example.com"))
+			.returning({ id: user.id })
+
+		return c.json({ ok: true, deletedCount: deletedUsers.length })
+	} catch (error) {
+		console.error("Error deleting test users:", error)
+		return c.json({ ok: false, message: "Failed to delete test users", error }, 500)
+	}
+})
+
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
-	return auth.handler(c.req.raw);
-});
+	return auth.handler(c.req.raw)
+})
 
 serve(
 	{
