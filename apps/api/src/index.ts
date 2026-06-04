@@ -43,28 +43,6 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 	return auth.handler(c.req.raw);
 });
 
-app.get("/api/session-test", async (c) => {
-	const session = await auth.api.getSession({
-		headers: c.req.raw.headers,
-	})
-
-	if (!session) {
-		return c.json(
-			{
-				ok: false,
-				message: "Unauthorized",
-			},
-			401,
-		)
-	}
-
-	return c.json({
-		ok: true,
-		message: "Authenticated request",
-		session,
-	})
-})
-
 serve(
 	{
 		fetch: app.fetch,
