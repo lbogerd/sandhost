@@ -2,16 +2,18 @@
 	"name": "@wtrn/api",
 	"type": "module",
 	"scripts": {
-		"dev": "tsx watch src/index.ts",
+		"dev": "tsx watch src/app.ts",
 		"build": "tsc",
-		"start": "node dist/index.js"
+		"start": "node dist/app.js"
 	},
 	"dependencies": {
 		"@hono/node-server": "catalog:",
+		"@orpc/server": "catalog:",
 		"@t3-oss/env-core": "catalog:",
 		"@wtrn/auth": "workspace:*",
 		"@wtrn/db": "workspace:*",
 		"@wtrn/db-schema": "workspace:*",
+		"@wtrn/rpc-contract": "workspace:*",
 		"dotenv": "catalog:",
 		"hono": "catalog:",
 		"zod": "catalog:"

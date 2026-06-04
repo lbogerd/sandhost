@@ -5,8 +5,40 @@ import { env } from "./env.ts"
 import { cors } from "hono/cors"
 import { db } from "@wtrn/db"
 import { like, user } from "@wtrn/db-schema"
+import { RPCHandler } from "@orpc/server/fetch"
+import { onError } from "@orpc/server"
+import { os } from "./rpc.ts"
 
 const app = new Hono()
+
+export const router = os.router({
+	hello: os.hello.handler(({ input }) => ({
+		message: `Hello, ${input.name}!`,
+	})),
+})
+
+const rpcHandler = new RPCHandler(router, {
+	interceptors: [
+		onError((error) => {
+			console.error(error)
+		}),
+	],
+})
+
+app.get("/", (c) => {
+	return c.text("Hello Hono!")
+})
+
+app.use("/rpc/*", async (c, next) => {
+	const { matched, response } = await rpcHandler.handle(c.req.raw, {
+		prefix: "/rpc",
+		context: {},
+	})
+
+	if (matched) return c.newResponse(response.body, response)
+
+	await next()
+})
 
 app.use(
 	"/api/*",
@@ -19,10 +51,6 @@ app.use(
 		credentials: true,
 	}),
 )
-
-app.get("/", (c) => {
-	return c.text("Hello Hono!")
-})
 
 app.post("/api/create-test-user", async (c) => {
 	const password = Math.random().toString(36).slice(-8)

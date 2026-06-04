@@ -1,0 +1,13 @@
+{
+	"name": "@wtrn/rpc-contract",
+	"version": "0.0.1",
+	"type": "module",
+	"exports": {
+		".": "./src/contract.ts"
+	},
+	"dependencies": {
+		"@orpc/contract": "catalog:",
+		"drizzle-orm": "catalog:",
+		"zod": "catalog:"
+	}
+}

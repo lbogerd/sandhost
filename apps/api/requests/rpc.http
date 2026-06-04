@@ -1,0 +1,14 @@
+@origin = http://localhost:4000
+@host = {{origin}}/rpc
+
+###
+# @name hello
+
+POST {{host}}/hello
+Content-Type: application/json
+
+{
+	"json": {
+		"name": "oRPC"
+	}
+}
