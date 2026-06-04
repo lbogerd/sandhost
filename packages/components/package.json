@@ -5,10 +5,11 @@
 	"exports": {
 		".": "./src/components.tsx"
 	},
-	"peerDependencies": {
-		"react": "catalog:"
-	},
 	"devDependencies": {
 		"@types/react": "catalog:"
+	},
+	"peerDependencies": {
+		"react": "catalog:",
+		"tailwindcss": "catalog:"
 	}
 }
