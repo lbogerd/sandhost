@@ -10,7 +10,13 @@ function App() {
 		<>
 			<section className="flex grow flex-col place-content-center place-items-center gap-[25px] px-0 py-0 max-lg:gap-[18px] max-lg:px-5 max-lg:pb-6 max-lg:pt-8">
 				<div className="relative">
-					<img src={heroImg} className="relative z-0 mx-auto w-[170px]" width="170" height="179" alt="" />
+					<img
+						src={heroImg}
+						className="relative z-0 mx-auto w-[170px]"
+						width="170"
+						height="179"
+						alt=""
+					/>
 					<img
 						src={reactLogo}
 						className="absolute inset-x-0 top-[34px] z-10 mx-auto h-7 [transform:perspective(2000px)_rotateZ(300deg)_rotateX(44deg)_rotateY(39deg)_scale(1.4)]"
@@ -82,7 +88,11 @@ function App() {
 								href="https://github.com/vitejs/vite"
 								target="_blank"
 							>
-								<svg className="size-[18px] dark:brightness-200 dark:invert" role="presentation" aria-hidden="true">
+								<svg
+									className="size-[18px] dark:brightness-200 dark:invert"
+									role="presentation"
+									aria-hidden="true"
+								>
 									<use href="/icons.svg#github-icon"></use>
 								</svg>
 								GitHub
@@ -94,7 +104,11 @@ function App() {
 								href="https://chat.vite.dev/"
 								target="_blank"
 							>
-								<svg className="size-[18px] dark:brightness-200 dark:invert" role="presentation" aria-hidden="true">
+								<svg
+									className="size-[18px] dark:brightness-200 dark:invert"
+									role="presentation"
+									aria-hidden="true"
+								>
 									<use href="/icons.svg#discord-icon"></use>
 								</svg>
 								Discord
@@ -106,7 +120,11 @@ function App() {
 								href="https://x.com/vite_js"
 								target="_blank"
 							>
-								<svg className="size-[18px] dark:brightness-200 dark:invert" role="presentation" aria-hidden="true">
+								<svg
+									className="size-[18px] dark:brightness-200 dark:invert"
+									role="presentation"
+									aria-hidden="true"
+								>
 									<use href="/icons.svg#x-icon"></use>
 								</svg>
 								X.com
@@ -118,7 +136,11 @@ function App() {
 								href="https://bsky.app/profile/vite.dev"
 								target="_blank"
 							>
-								<svg className="size-[18px] dark:brightness-200 dark:invert" role="presentation" aria-hidden="true">
+								<svg
+									className="size-[18px] dark:brightness-200 dark:invert"
+									role="presentation"
+									aria-hidden="true"
+								>
 									<use href="/icons.svg#bluesky-icon"></use>
 								</svg>
 								Bluesky
