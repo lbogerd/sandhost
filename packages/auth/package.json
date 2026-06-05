@@ -1,6 +1,9 @@
 {
 	"name": "@wtrn/auth",
 	"type": "module",
+	"exports": {
+		".": "./src/auth.ts"
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
@@ -9,8 +12,5 @@
 		"@wtrn/db-schema": "workspace:*",
 		"better-auth": "catalog:",
 		"zod": "catalog:"
-	},
-	"exports": {
-		".": "./src/auth.ts"
 	}
 }
