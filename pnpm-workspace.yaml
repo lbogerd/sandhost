@@ -10,6 +10,7 @@ catalog:
   "@t3-oss/env-core": 0.13.11
   "@types/node": 24.12.4
   "@types/react": 19.2.16
+  "@tailwindcss/vite": 4.3.0
   better-auth: 1.6.11
   dotenv: 17.4.2
   drizzle-kit: 0.31.10

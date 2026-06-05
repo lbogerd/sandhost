@@ -17,6 +17,7 @@
 		"@babel/core": "7.29.0",
 		"@eslint/js": "10.0.1",
 		"@rolldown/plugin-babel": "0.2.3",
+		"@tailwindcss/vite": "catalog:",
 		"@types/babel__core": "7.20.5",
 		"@types/node": "catalog:",
 		"@types/react": "catalog:",
@@ -27,6 +28,7 @@
 		"eslint-plugin-react-hooks": "7.1.1",
 		"eslint-plugin-react-refresh": "0.5.2",
 		"globals": "17.6.0",
+		"tailwindcss": "catalog:",
 		"typescript": "catalog:",
 		"typescript-eslint": "8.59.2",
 		"vite": "8.0.12"
