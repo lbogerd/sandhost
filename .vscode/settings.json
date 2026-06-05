@@ -6,6 +6,7 @@
 		"*.css": "tailwindcss"
 	},
 	"tailwindCSS.experimental.configFile": {
-		"packages/components/src/tailwind.css": "packages/components/src/**"
+		"packages/components/src/tailwind.css": "packages/components/src/**",
+		"apps/web/src/tailwind.css": "apps/web/src/**"
 	}
 }
