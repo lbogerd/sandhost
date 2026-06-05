@@ -11,6 +11,15 @@ import { os } from "./rpc.ts"
 
 const app = new Hono()
 
+const corsMiddleware = cors({
+	origin: (origin) => origin ?? "*",
+	allowHeaders: ["Content-Type", "Authorization"],
+	allowMethods: ["POST", "GET", "OPTIONS"],
+	exposeHeaders: ["Content-Length"],
+	maxAge: 600,
+	credentials: true,
+})
+
 export const router = os.router({
 	hello: os.hello.handler(({ input }) => ({
 		message: `Hello, ${input.name}!`,
@@ -29,6 +38,8 @@ app.get("/", (c) => {
 	return c.text("Hello Hono!")
 })
 
+app.use("/rpc/*", corsMiddleware)
+
 app.use("/rpc/*", async (c, next) => {
 	const { matched, response } = await rpcHandler.handle(c.req.raw, {
 		prefix: "/rpc",
@@ -40,17 +51,7 @@ app.use("/rpc/*", async (c, next) => {
 	await next()
 })
 
-app.use(
-	"/api/*",
-	cors({
-		origin: (origin) => origin ?? "*",
-		allowHeaders: ["Content-Type", "Authorization"],
-		allowMethods: ["POST", "GET", "OPTIONS"],
-		exposeHeaders: ["Content-Length"],
-		maxAge: 600,
-		credentials: true,
-	}),
-)
+app.use("/api/*", corsMiddleware)
 
 app.post("/api/create-test-user", async (c) => {
 	const password = Math.random().toString(36).slice(-8)

@@ -9,6 +9,9 @@ catalogs:
     '@hono/node-server':
       specifier: 2.0.4
       version: 2.0.4
+    '@orpc/client':
+      specifier: 1.14.4
+      version: 1.14.4
     '@orpc/contract':
       specifier: 1.14.4
       version: 1.14.4
@@ -147,6 +150,9 @@ importers:
       '@tanstack/react-router-devtools':
         specifier: 'catalog:'
         version: 1.167.0(@tanstack/react-router@1.170.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@tanstack/router-core@1.171.9)(csstype@3.2.3)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@wtrn/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       react:
         specifier: 'catalog:'
         version: 19.2.7
@@ -211,6 +217,22 @@ importers:
       vite:
         specifier: 8.0.12
         version: 8.0.12(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)
+
+  packages/api-client:
+    dependencies:
+      '@orpc/client':
+        specifier: 'catalog:'
+        version: 1.14.4
+      '@orpc/contract':
+        specifier: 'catalog:'
+        version: 1.14.4
+      '@wtrn/rpc-contract':
+        specifier: workspace:*
+        version: link:../rpc-contract
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   packages/auth:
     dependencies:

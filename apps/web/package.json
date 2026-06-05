@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@tanstack/react-router": "catalog:",
 		"@tanstack/react-router-devtools": "catalog:",
+		"@wtrn/api-client": "workspace:*",
 		"react": "catalog:",
 		"react-dom": "19.2.7"
 	},

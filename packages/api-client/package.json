@@ -1,0 +1,16 @@
+{
+	"name": "@wtrn/api-client",
+	"version": "0.0.1",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@orpc/client": "catalog:",
+		"@orpc/contract": "catalog:",
+		"@wtrn/rpc-contract": "workspace:*"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
+	}
+}
