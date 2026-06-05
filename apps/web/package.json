@@ -10,6 +10,8 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@tanstack/react-router": "catalog:",
+		"@tanstack/react-router-devtools": "catalog:",
 		"react": "catalog:",
 		"react-dom": "19.2.7"
 	},
@@ -18,6 +20,7 @@
 		"@eslint/js": "10.0.1",
 		"@rolldown/plugin-babel": "0.2.3",
 		"@tailwindcss/vite": "catalog:",
+		"@tanstack/router-plugin": "catalog:",
 		"@types/babel__core": "7.20.5",
 		"@types/node": "catalog:",
 		"@types/react": "catalog:",
