@@ -8,6 +8,7 @@
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"dependencies": {
+		"@better-auth/api-key": "catalog:",
 		"@wtrn/db": "workspace:*",
 		"@wtrn/db-schema": "workspace:*",
 		"better-auth": "catalog:",

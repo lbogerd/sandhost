@@ -1,0 +1,25 @@
+{
+	"name": "@wtrn/runner",
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/main.ts",
+		"build": "tsc",
+		"start": "tsx src/main.ts"
+	},
+	"dependencies": {
+		"@opentelemetry/api": "catalog:",
+		"@orpc/client": "catalog:",
+		"@orpc/contract": "catalog:",
+		"@t3-oss/env-core": "catalog:",
+		"@wtrn/api-client": "workspace:*",
+		"@wtrn/rpc-contract": "workspace:*",
+		"dotenv": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@types/node": "catalog:",
+		"tsx": "catalog:",
+		"typescript": "catalog:"
+	}
+}

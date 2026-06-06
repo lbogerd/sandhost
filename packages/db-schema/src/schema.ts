@@ -1,5 +1,15 @@
 import { relations } from "drizzle-orm"
-import { pgTable, varchar, text, timestamp, boolean, index } from "drizzle-orm/pg-core"
+import {
+	boolean,
+	doublePrecision,
+	index,
+	integer,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	varchar,
+} from "drizzle-orm/pg-core"
 
 export * from "drizzle-orm"
 
@@ -152,6 +162,84 @@ export const verification = pgTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 )
 
+export const apikey = pgTable(
+	"apikey",
+	{
+		id: text("id").primaryKey(),
+		configId: text("config_id").notNull().default("default"),
+		name: text("name"),
+		start: text("start"),
+		prefix: text("prefix"),
+		key: text("key").notNull(),
+		referenceId: text("reference_id").notNull(),
+		refillInterval: integer("refill_interval"),
+		refillAmount: integer("refill_amount"),
+		lastRefillAt: timestampTz("last_refill_at"),
+		enabled: boolean("enabled").default(true),
+		rateLimitEnabled: boolean("rate_limit_enabled").default(true),
+		rateLimitTimeWindow: integer("rate_limit_time_window"),
+		rateLimitMax: integer("rate_limit_max"),
+		requestCount: integer("request_count"),
+		remaining: integer("remaining"),
+		lastRequest: timestampTz("last_request"),
+		expiresAt: timestampTz("expires_at"),
+		createdAt,
+		updatedAt,
+		permissions: text("permissions"),
+		metadata: text("metadata"),
+	},
+	(table) => [
+		index("apikey_configId_idx").on(table.configId),
+		index("apikey_referenceId_idx").on(table.referenceId),
+	],
+)
+
+export const runner = pgTable("runner", {
+	id: text("id").primaryKey(),
+	name: text("name"),
+	hostname: text("hostname").notNull(),
+	status: text("status").notNull().default("online"),
+	lastSeenAt: timestampTz("last_seen_at").notNull(),
+	createdAt,
+	updatedAt,
+})
+
+export const runnerHeartbeat = pgTable(
+	"runner_heartbeat",
+	{
+		id: text("id").primaryKey(),
+		runnerId: text("runner_id")
+			.notNull()
+			.references(() => runner.id, { onDelete: "cascade" }),
+		cpuUsagePercent: doublePrecision("cpu_usage_percent").notNull(),
+		memoryFreeBytes: doublePrecision("memory_free_bytes").notNull(),
+		memoryTotalBytes: doublePrecision("memory_total_bytes").notNull(),
+		runningSandboxCount: integer("running_sandbox_count").notNull(),
+		reportedAt: timestampTz("reported_at").notNull(),
+	},
+	(table) => [index("runnerHeartbeat_runnerId_idx").on(table.runnerId)],
+)
+
+export const runnerCommand = pgTable(
+	"runner_command",
+	{
+		id: text("id").primaryKey(),
+		runnerId: text("runner_id")
+			.notNull()
+			.references(() => runner.id, { onDelete: "cascade" }),
+		type: text("type").notNull(),
+		payload: jsonb("payload").notNull(),
+		status: text("status").notNull().default("pending"),
+		createdAt,
+		claimedAt: timestampTz("claimed_at"),
+		completedAt: timestampTz("completed_at"),
+	},
+	(table) => [
+		index("runnerCommand_runnerId_idx").on(table.runnerId),
+		index("runnerCommand_status_idx").on(table.status),
+	],
+)
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
@@ -189,6 +277,25 @@ export const sessionRelations = relations(session, ({ one }) => ({
 	user: one(user, {
 		fields: [session.userId],
 		references: [user.id],
+	}),
+}))
+
+export const runnerRelations = relations(runner, ({ many }) => ({
+	heartbeats: many(runnerHeartbeat),
+	commands: many(runnerCommand),
+}))
+
+export const runnerHeartbeatRelations = relations(runnerHeartbeat, ({ one }) => ({
+	runner: one(runner, {
+		fields: [runnerHeartbeat.runnerId],
+		references: [runner.id],
+	}),
+}))
+
+export const runnerCommandRelations = relations(runnerCommand, ({ one }) => ({
+	runner: one(runner, {
+		fields: [runnerCommand.runnerId],
+		references: [runner.id],
 	}),
 }))
 

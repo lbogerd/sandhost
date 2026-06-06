@@ -4,10 +4,22 @@ import { auth } from "./auth.ts"
 import { env } from "./env.ts"
 import { cors } from "hono/cors"
 import { db } from "@wtrn/db"
-import { like, user } from "@wtrn/db-schema"
+import {
+	and,
+	asc,
+	eq,
+	inArray,
+	like,
+	runner,
+	runnerCommand,
+	runnerHeartbeat,
+	user,
+} from "@wtrn/db-schema"
 import { RPCHandler } from "@orpc/server/fetch"
-import { onError } from "@orpc/server"
-import { createRpcContext, os, secured } from "./rpc.ts"
+import { onError, ORPCError } from "@orpc/server"
+import { randomUUID } from "node:crypto"
+import { runnerCommandSchema } from "@wtrn/rpc-contract"
+import { createRpcContext, os, runnerSecured, secured } from "./rpc.ts"
 
 const app = new Hono()
 
@@ -29,10 +41,130 @@ export const router = os.router({
 			name: context.authSession.user.name,
 		},
 	})),
+	createRunnerApiKey: secured.createRunnerApiKey.handler(async ({ context, input }) => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				configId: "runner",
+				metadata: {
+					runnerId: input.runnerId,
+				},
+				name: input.name,
+				permissions: {
+					runner: ["heartbeat", "sandbox:event"],
+				},
+				rateLimitEnabled: false,
+				userId: context.authSession.user.id,
+			},
+		})
+
+		if (!apiKey.key) {
+			throw new ORPCError("INTERNAL_SERVER_ERROR", {
+				message: "Better Auth did not return the generated API key",
+			})
+		}
+
+		return {
+			apiKey: apiKey.key,
+			name: input.name,
+			runnerId: input.runnerId,
+		}
+	}),
 	hello: os.hello.handler(({ input }) => ({
 		message: `Hello, ${input.name}!`,
 	})),
+	runner: {
+		heartbeat: runnerSecured.runner.heartbeat.handler(async ({ context, input }) => {
+			if (context.runner.id !== input.runnerId) {
+				throw new ORPCError("UNAUTHORIZED", {
+					message: "Runner ID does not match API key metadata",
+				})
+			}
+
+			const acceptedAt = new Date()
+
+			await db
+				.insert(runner)
+				.values({
+					hostname: input.hostname,
+					id: input.runnerId,
+					lastSeenAt: acceptedAt,
+					status: "online",
+				})
+				.onConflictDoUpdate({
+					set: {
+						hostname: input.hostname,
+						lastSeenAt: acceptedAt,
+						status: "online",
+					},
+					target: runner.id,
+				})
+
+			await db.insert(runnerHeartbeat).values({
+				cpuUsagePercent: input.resources.cpuUsagePercent,
+				id: randomUUID(),
+				memoryFreeBytes: input.resources.memoryFreeBytes,
+				memoryTotalBytes: input.resources.memoryTotalBytes,
+				reportedAt: acceptedAt,
+				runnerId: input.runnerId,
+				runningSandboxCount: input.sandboxes.filter((sandbox) => sandbox.state === "running")
+					.length,
+			})
+
+			const pendingCommands = await claimPendingCommands(input.runnerId, acceptedAt)
+
+			return {
+				acceptedAt: acceptedAt.toISOString(),
+				commands: pendingCommands,
+			}
+		}),
+	},
 })
+
+async function claimPendingCommands(runnerId: string, claimedAt: Date) {
+	return db.transaction(async (tx) => {
+		const pendingCommands = await tx
+			.select()
+			.from(runnerCommand)
+			.where(and(eq(runnerCommand.runnerId, runnerId), eq(runnerCommand.status, "pending")))
+			.orderBy(asc(runnerCommand.createdAt))
+			.limit(10)
+
+		if (pendingCommands.length === 0) return []
+
+		const claimedCommands = await tx
+			.update(runnerCommand)
+			.set({
+				claimedAt,
+				status: "claimed",
+			})
+			.where(
+				and(
+					eq(runnerCommand.status, "pending"),
+					inArray(
+						runnerCommand.id,
+						pendingCommands.map((command) => command.id),
+					),
+				),
+			)
+			.returning()
+
+		return claimedCommands.map((command) =>
+			runnerCommandSchema.parse({
+				id: command.id,
+				type: command.type,
+				...getCommandPayload(command.payload),
+			}),
+		)
+	})
+}
+
+function getCommandPayload(payload: unknown): Record<string, unknown> {
+	if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+		return {}
+	}
+
+	return { ...payload }
+}
 
 const rpcHandler = new RPCHandler(router, {
 	interceptors: [
