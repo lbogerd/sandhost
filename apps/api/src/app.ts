@@ -7,7 +7,7 @@ import { db } from "@wtrn/db"
 import { like, user } from "@wtrn/db-schema"
 import { RPCHandler } from "@orpc/server/fetch"
 import { onError } from "@orpc/server"
-import { os } from "./rpc.ts"
+import { createRpcContext, os, secured } from "./rpc.ts"
 
 const app = new Hono()
 
@@ -21,6 +21,14 @@ const corsMiddleware = cors({
 })
 
 export const router = os.router({
+	authStatus: secured.authStatus.handler(({ context }) => ({
+		message: `It worked! Your email: ${context.authSession.user.email}`,
+		user: {
+			id: context.authSession.user.id,
+			email: context.authSession.user.email,
+			name: context.authSession.user.name,
+		},
+	})),
 	hello: os.hello.handler(({ input }) => ({
 		message: `Hello, ${input.name}!`,
 	})),
@@ -43,7 +51,7 @@ app.use("/rpc/*", corsMiddleware)
 app.use("/rpc/*", async (c, next) => {
 	const { matched, response } = await rpcHandler.handle(c.req.raw, {
 		prefix: "/rpc",
-		context: {},
+		context: await createRpcContext(c.req.raw),
 	})
 
 	if (matched) return c.newResponse(response.body, response)

@@ -7,9 +7,11 @@ import * as schema from "@wtrn/db-schema"
 export const auth = ({
 	betterAuthUrl,
 	betterAuthSecret,
+	trustedOrigins = ["http://localhost:3000"],
 }: {
 	betterAuthUrl: string
 	betterAuthSecret: string
+	trustedOrigins?: string[]
 }) =>
 	betterAuth({
 		baseURL: betterAuthUrl,
@@ -22,4 +24,5 @@ export const auth = ({
 		},
 		plugins: [admin(), organization()],
 		secret: betterAuthSecret,
+		trustedOrigins,
 	})
