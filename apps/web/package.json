@@ -10,6 +10,9 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@orpc/tanstack-query": "catalog:",
+		"@tanstack/react-query": "catalog:",
+		"@tanstack/react-query-devtools": "catalog:",
 		"@tanstack/react-router": "catalog:",
 		"@tanstack/react-router-devtools": "catalog:",
 		"@wtrn/api-client": "workspace:*",

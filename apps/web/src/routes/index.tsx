@@ -1,5 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { apiClient, apiOrigin } from "../api.ts"
+import { apiOrigin, orpc } from "../api.ts"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
@@ -9,30 +10,24 @@ export const Route = createFileRoute("/")({
 
 function Index() {
 	const [name, setName] = useState("oRPC")
-	const [message, setMessage] = useState<string | null>(null)
-	const [error, setError] = useState<string | null>(null)
-	const [isLoading, setIsLoading] = useState(false)
 	const [authEmail, setAuthEmail] = useState<string | null>(null)
 	const [authMessage, setAuthMessage] = useState<string | null>(null)
 	const [authError, setAuthError] = useState<string | null>(null)
-	const [authBusyAction, setAuthBusyAction] = useState<
-		"create" | "protected" | "sign-out" | null
-	>(null)
+	const [authBusyAction, setAuthBusyAction] = useState<"create" | "protected" | "sign-out" | null>(
+		null,
+	)
 
-	async function callHelloProcedure(event: FormEvent<HTMLFormElement>) {
+	const helloMutation = useMutation(orpc.hello.mutationOptions())
+	const authStatusQuery = useQuery(
+		orpc.authStatus.queryOptions({
+			enabled: false,
+			retry: false,
+		}),
+	)
+
+	function callHelloProcedure(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
-		setIsLoading(true)
-		setError(null)
-
-		try {
-			const result = await apiClient.hello({ name })
-			setMessage(result.message)
-		} catch (error) {
-			setMessage(null)
-			setError(error instanceof Error ? error.message : "Failed to call procedure")
-		} finally {
-			setIsLoading(false)
-		}
+		helloMutation.mutate({ name })
 	}
 
 	async function createAndSignInTestUser() {
@@ -85,7 +80,14 @@ function Index() {
 		setAuthMessage(null)
 
 		try {
-			const result = await apiClient.authStatus()
+			const { data: result } = await authStatusQuery.refetch({
+				throwOnError: true,
+			})
+
+			if (!result) {
+				throw new Error("Protected route returned no response")
+			}
+
 			setAuthEmail(result.user.email)
 			setAuthMessage(result.message)
 		} catch (error) {
@@ -145,17 +147,19 @@ function Index() {
 
 					<button
 						className="w-fit rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={isLoading}
+						disabled={helloMutation.isPending}
 						type="submit"
 					>
-						{isLoading ? "Calling..." : "Call hello"}
+						{helloMutation.isPending ? "Calling..." : "Call hello"}
 					</button>
 				</form>
 
 				<div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm">
 					<div className="font-medium text-neutral-700">Result</div>
 					<div className="mt-2 text-neutral-950">
-						{message ?? error ?? "No response yet."}
+						{helloMutation.error
+							? `Error: ${getErrorMessage(helloMutation.error, "An unknown error occurred")}`
+							: (JSON.stringify(helloMutation.data, null, 2) ?? "No response yet.")}
 					</div>
 				</div>
 			</div>

@@ -1,3 +1,4 @@
+import { createTanstackQueryUtils } from "@orpc/tanstack-query"
 import { createApiClient } from "@wtrn/api-client"
 
 type ImportMetaEnv = {
@@ -12,6 +13,7 @@ type ImportMetaWithEnv = ImportMeta & {
 export const apiOrigin = getApiOrigin()
 export const rpcUrl = getRpcUrl(apiOrigin)
 export const apiClient = createApiClient({ rpcUrl })
+export const orpc = createTanstackQueryUtils(apiClient)
 
 function getApiOrigin() {
 	const env = (import.meta as ImportMetaWithEnv).env
