@@ -12,7 +12,7 @@ import { createRpcContext, os, secured } from "./rpc.ts"
 const app = new Hono()
 
 const corsMiddleware = cors({
-	origin: (origin) => origin ?? "*",
+	origin: env.TRUSTED_ORIGINS,
 	allowHeaders: ["Content-Type", "Authorization"],
 	allowMethods: ["POST", "GET", "OPTIONS"],
 	exposeHeaders: ["Content-Length"],

@@ -13,6 +13,16 @@ export const env = createEnv({
 			.transform((val) => parseInt(val, 10))
 			.pipe(z.number())
 			.default(4000),
+		TRUSTED_ORIGINS: z
+			.string()
+			.default("http://localhost:3000")
+			.transform((value) =>
+				value
+					.split(",")
+					.map((origin) => origin.trim())
+					.filter(Boolean),
+			)
+			.pipe(z.array(z.url()).min(1)),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

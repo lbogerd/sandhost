@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { apiClient } from "@wtrn/api-client"
+import { apiClient, apiOrigin } from "../api.ts"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
@@ -18,8 +18,6 @@ function Index() {
 	const [authBusyAction, setAuthBusyAction] = useState<
 		"create" | "protected" | "sign-out" | null
 	>(null)
-
-	const apiOrigin = getDefaultApiOrigin()
 
 	async function callHelloProcedure(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
@@ -214,15 +212,6 @@ function Index() {
 	)
 }
 
-type ImportMetaEnv = {
-	VITE_API_ORIGIN?: string
-	VITE_API_URL?: string
-}
-
-type ImportMetaWithEnv = ImportMeta & {
-	env?: ImportMetaEnv
-}
-
 type CreateTestUserResponse = {
 	password: string
 	user: {
@@ -230,15 +219,6 @@ type CreateTestUserResponse = {
 			email: string
 		}
 	}
-}
-
-function getDefaultApiOrigin() {
-	const env = (import.meta as ImportMetaWithEnv).env
-
-	return (env?.VITE_API_ORIGIN ?? env?.VITE_API_URL ?? "http://localhost:4000").replace(
-		/\/$/,
-		"",
-	)
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
