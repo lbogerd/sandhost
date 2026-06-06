@@ -31,6 +31,44 @@ const createRunnerApiKeyContract = oc
 		}),
 	)
 
+const listRunnersContract = oc.output(
+	z.object({
+		runners: z.array(
+			z.object({
+				hostname: z.string(),
+				id: z.string(),
+				lastSeenAt: z.iso.datetime(),
+				latestHeartbeat: z
+					.object({
+						cpuUsagePercent: z.number(),
+						memoryFreeBytes: z.number(),
+						memoryTotalBytes: z.number(),
+						reportedAt: z.iso.datetime(),
+						runningSandboxCount: z.number(),
+					})
+					.nullable(),
+				name: z.string().nullable(),
+				online: z.boolean(),
+				status: z.enum(["online", "offline"]),
+			}),
+		),
+	}),
+)
+
+const startFakeSandboxContract = oc
+	.input(
+		z.object({
+			runnerId: z.string().min(1),
+		}),
+	)
+	.output(
+		z.object({
+			commandId: z.string(),
+			runnerId: z.string(),
+			sandboxId: z.string(),
+		}),
+	)
+
 export const localSandboxSchema = z.object({
 	id: z.string(),
 	startedAt: z.iso.datetime().nullable(),
@@ -85,6 +123,8 @@ export const routerContract = oc.router({
 	authStatus: authStatusContract,
 	createRunnerApiKey: createRunnerApiKeyContract,
 	hello: helloWorldContract,
+	listRunners: listRunnersContract,
+	startFakeSandbox: startFakeSandboxContract,
 	runner: oc.router({
 		heartbeat: runnerHeartbeatContract,
 	}),

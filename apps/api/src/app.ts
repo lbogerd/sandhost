@@ -7,6 +7,7 @@ import { db } from "@wtrn/db"
 import {
 	and,
 	asc,
+	desc,
 	eq,
 	inArray,
 	like,
@@ -20,6 +21,8 @@ import { onError, ORPCError } from "@orpc/server"
 import { randomUUID } from "node:crypto"
 import { runnerCommandSchema } from "@wtrn/rpc-contract"
 import { createRpcContext, os, runnerSecured, secured } from "./rpc.ts"
+
+const RUNNER_ONLINE_WINDOW_MS = 30_000
 
 const app = new Hono()
 
@@ -72,6 +75,87 @@ export const router = os.router({
 	hello: os.hello.handler(({ input }) => ({
 		message: `Hello, ${input.name}!`,
 	})),
+	listRunners: secured.listRunners.handler(async () => {
+		const runners = await db.select().from(runner).orderBy(asc(runner.id))
+		const heartbeats = await db
+			.select()
+			.from(runnerHeartbeat)
+			.orderBy(desc(runnerHeartbeat.reportedAt))
+		const latestHeartbeats = new Map<string, (typeof heartbeats)[number]>()
+
+		for (const heartbeat of heartbeats) {
+			if (!latestHeartbeats.has(heartbeat.runnerId)) {
+				latestHeartbeats.set(heartbeat.runnerId, heartbeat)
+			}
+		}
+
+		return {
+			runners: runners.map((currentRunner) => {
+				const latestHeartbeat = latestHeartbeats.get(currentRunner.id) ?? null
+				const online = Date.now() - currentRunner.lastSeenAt.getTime() <= RUNNER_ONLINE_WINDOW_MS
+
+				return {
+					hostname: currentRunner.hostname,
+					id: currentRunner.id,
+					lastSeenAt: currentRunner.lastSeenAt.toISOString(),
+					latestHeartbeat: latestHeartbeat
+						? {
+								cpuUsagePercent: latestHeartbeat.cpuUsagePercent,
+								memoryFreeBytes: latestHeartbeat.memoryFreeBytes,
+								memoryTotalBytes: latestHeartbeat.memoryTotalBytes,
+								reportedAt: latestHeartbeat.reportedAt.toISOString(),
+								runningSandboxCount: latestHeartbeat.runningSandboxCount,
+							}
+						: null,
+					name: currentRunner.name,
+					online,
+					status: online ? "online" : "offline",
+				}
+			}),
+		}
+	}),
+	startFakeSandbox: secured.startFakeSandbox.handler(async ({ input }) => {
+		const selectedRunner = await db
+			.select()
+			.from(runner)
+			.where(eq(runner.id, input.runnerId))
+			.limit(1)
+
+		if (!selectedRunner[0]) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Runner not found",
+			})
+		}
+
+		const online = Date.now() - selectedRunner[0].lastSeenAt.getTime() <= RUNNER_ONLINE_WINDOW_MS
+
+		if (!online) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Runner is offline",
+			})
+		}
+
+		const commandId = randomUUID()
+		const sandboxId = `sandbox-${randomUUID().slice(0, 8)}`
+
+		await db.insert(runnerCommand).values({
+			id: commandId,
+			payload: {
+				env: {},
+				image: "fake://sandbox",
+				sandboxId,
+			},
+			runnerId: input.runnerId,
+			status: "pending",
+			type: "startSandbox",
+		})
+
+		return {
+			commandId,
+			runnerId: input.runnerId,
+			sandboxId,
+		}
+	}),
 	runner: {
 		heartbeat: runnerSecured.runner.heartbeat.handler(async ({ context, input }) => {
 			if (context.runner.id !== input.runnerId) {
