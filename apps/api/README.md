@@ -1,10 +1,11 @@
-```
-pnpm install
-pnpm run dev
-```
+# @wtrn/api
 
-```
-open http://localhost:3000
+Hono API server for Sandhost. It hosts Better Auth routes, the oRPC router,
+runner API-key auth, heartbeat ingestion, runner listing, and test sandbox
+command queueing.
+
+```sh
+pnpm --filter @wtrn/api dev
 ```
 
 ## Environment
