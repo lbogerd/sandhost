@@ -201,6 +201,11 @@ export const router = os.router({
 				commands: pendingCommands,
 			}
 		}),
+		reportCommandResult: runnerSecured.runner.reportCommandResult.handler(() => {
+			throw new ORPCError("NOT_IMPLEMENTED", {
+				message: "Runner command result reporting is not implemented yet",
+			})
+		}),
 	},
 })
 

@@ -232,7 +232,9 @@ export const runnerCommand = pgTable(
 		status: text("status").notNull().default("pending"),
 		createdAt,
 		claimedAt: timestampTz("claimed_at"),
-		completedAt: timestampTz("completed_at"),
+		startedAt: timestampTz("started_at"),
+		finishedAt: timestampTz("finished_at"),
+		error: text("error"),
 	},
 	(table) => [
 		index("runnerCommand_runnerId_idx").on(table.runnerId),
