@@ -201,11 +201,77 @@ export const router = os.router({
 				commands: pendingCommands,
 			}
 		}),
-		reportCommandResult: runnerSecured.runner.reportCommandResult.handler(() => {
-			throw new ORPCError("NOT_IMPLEMENTED", {
-				message: "Runner command result reporting is not implemented yet",
-			})
-		}),
+		reportCommandResult: runnerSecured.runner.reportCommandResult.handler(
+			async ({ context, input }) => {
+				if (context.runner.id !== input.runnerId) {
+					throw new ORPCError("UNAUTHORIZED", {
+						message: "Runner ID does not match API key metadata",
+					})
+				}
+
+				const acceptedAt = new Date()
+
+				return db.transaction(async (tx) => {
+					const selectedCommands = await tx
+						.select()
+						.from(runnerCommand)
+						.where(eq(runnerCommand.id, input.commandId))
+						.limit(1)
+					const command = selectedCommands[0]
+
+					if (!command) {
+						throw new ORPCError("NOT_FOUND", {
+							message: "Runner command not found",
+						})
+					}
+
+					if (command.runnerId !== input.runnerId) {
+						throw new ORPCError("UNAUTHORIZED", {
+							message: "Runner command belongs to a different runner",
+						})
+					}
+
+					switch (input.status) {
+						case "running":
+							await tx
+								.update(runnerCommand)
+								.set({
+									error: null,
+									startedAt: command.startedAt ?? acceptedAt,
+									status: "running",
+								})
+								.where(eq(runnerCommand.id, input.commandId))
+							break
+						case "succeeded":
+							await tx
+								.update(runnerCommand)
+								.set({
+									error: null,
+									finishedAt: acceptedAt,
+									status: "succeeded",
+								})
+								.where(eq(runnerCommand.id, input.commandId))
+							break
+						case "failed":
+							await tx
+								.update(runnerCommand)
+								.set({
+									error: input.error,
+									finishedAt: acceptedAt,
+									status: "failed",
+								})
+								.where(eq(runnerCommand.id, input.commandId))
+							break
+					}
+
+					return {
+						acceptedAt: acceptedAt.toISOString(),
+						commandId: input.commandId,
+						status: input.status,
+					}
+				})
+			},
+		),
 	},
 })
 
