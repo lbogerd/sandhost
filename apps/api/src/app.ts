@@ -19,10 +19,11 @@ import {
 import { RPCHandler } from "@orpc/server/fetch"
 import { onError, ORPCError } from "@orpc/server"
 import { randomUUID } from "node:crypto"
-import { runnerCommandSchema } from "@wtrn/rpc-contract"
+import { runnerCommandSchema, runnerCommandStatusSchema } from "@wtrn/rpc-contract"
 import { createRpcContext, os, runnerSecured, secured } from "./rpc.ts"
 
 const RUNNER_ONLINE_WINDOW_MS = 30_000
+const RUNNER_COMMAND_CLAIM_BATCH_SIZE = 10
 
 const app = new Hono()
 
@@ -156,6 +157,32 @@ export const router = os.router({
 			sandboxId,
 		}
 	}),
+	getCommandStatus: secured.getCommandStatus.handler(async ({ input }) => {
+		const selectedCommands = await db
+			.select()
+			.from(runnerCommand)
+			.where(eq(runnerCommand.id, input.commandId))
+			.limit(1)
+		const command = selectedCommands[0]
+
+		if (!command) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Runner command not found",
+			})
+		}
+
+		return {
+			claimedAt: command.claimedAt?.toISOString() ?? null,
+			commandId: command.id,
+			createdAt: command.createdAt.toISOString(),
+			error: command.error,
+			finishedAt: command.finishedAt?.toISOString() ?? null,
+			runnerId: command.runnerId,
+			startedAt: command.startedAt?.toISOString() ?? null,
+			status: runnerCommandStatusSchema.parse(command.status),
+			type: command.type,
+		}
+	}),
 	runner: {
 		heartbeat: runnerSecured.runner.heartbeat.handler(async ({ context, input }) => {
 			if (context.runner.id !== input.runnerId) {
@@ -282,7 +309,7 @@ async function claimPendingCommands(runnerId: string, claimedAt: Date) {
 			.from(runnerCommand)
 			.where(and(eq(runnerCommand.runnerId, runnerId), eq(runnerCommand.status, "pending")))
 			.orderBy(asc(runnerCommand.createdAt))
-			.limit(10)
+			.limit(RUNNER_COMMAND_CLAIM_BATCH_SIZE)
 
 		if (pendingCommands.length === 0) return []
 
@@ -294,6 +321,7 @@ async function claimPendingCommands(runnerId: string, claimedAt: Date) {
 			})
 			.where(
 				and(
+					eq(runnerCommand.runnerId, runnerId),
 					eq(runnerCommand.status, "pending"),
 					inArray(
 						runnerCommand.id,
@@ -303,13 +331,20 @@ async function claimPendingCommands(runnerId: string, claimedAt: Date) {
 			)
 			.returning()
 
-		return claimedCommands.map((command) =>
-			runnerCommandSchema.parse({
+		const claimedCommandsById = new Map(claimedCommands.map((command) => [command.id, command]))
+
+		return pendingCommands.flatMap((pendingCommand) => {
+			const command = claimedCommandsById.get(pendingCommand.id)
+			if (!command) return []
+
+			const parsedCommand = runnerCommandSchema.parse({
 				id: command.id,
 				type: command.type,
 				...getCommandPayload(command.payload),
-			}),
-		)
+			})
+
+			return [parsedCommand]
+		})
 	})
 }
 

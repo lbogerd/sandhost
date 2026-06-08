@@ -19,6 +19,7 @@ function Index() {
 	const [runnerKeyError, setRunnerKeyError] = useState<string | null>(null)
 	const [runnerKeyCopied, setRunnerKeyCopied] = useState(false)
 	const [startingRunnerId, setStartingRunnerId] = useState<string | null>(null)
+	const [lastStartedCommand, setLastStartedCommand] = useState<StartedCommand | null>(null)
 	const [authBusyAction, setAuthBusyAction] = useState<"create" | "protected" | "sign-out" | null>(
 		null,
 	)
@@ -36,6 +37,19 @@ function Index() {
 		orpc.listRunners.queryOptions({
 			enabled: authEmail !== null,
 			refetchInterval: 5000,
+			retry: false,
+		}),
+	)
+	const commandStatusQuery = useQuery(
+		orpc.getCommandStatus.queryOptions({
+			enabled: lastStartedCommand !== null,
+			input: {
+				commandId: lastStartedCommand?.commandId ?? "",
+			},
+			refetchInterval: (query) => {
+				const status = query.state.data?.status
+				return status === "succeeded" || status === "failed" ? false : 1000
+			},
 			retry: false,
 		}),
 	)
@@ -184,6 +198,7 @@ function Index() {
 
 		try {
 			const result = await startFakeSandboxMutation.mutateAsync({ runnerId })
+			setLastStartedCommand(result)
 			setAuthMessage(`Queued fake sandbox ${result.sandboxId}`)
 			await runnersQuery.refetch()
 		} catch (error) {
@@ -390,6 +405,38 @@ function Index() {
 						</tbody>
 					</table>
 				</div>
+
+				{lastStartedCommand ? (
+					<div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<div className="font-medium text-neutral-950">
+									Fake sandbox {lastStartedCommand.sandboxId}
+								</div>
+								<div className="mt-1 font-mono text-xs text-neutral-500">
+									{lastStartedCommand.commandId}
+								</div>
+							</div>
+							<span
+								className={[
+									"inline-flex w-fit items-center rounded-full px-2 py-1 text-xs font-medium",
+									getCommandStatusClass(commandStatusQuery.data?.status),
+								].join(" ")}
+							>
+								{commandStatusQuery.data?.status ??
+									(commandStatusQuery.isFetching ? "loading" : "queued")}
+							</span>
+						</div>
+						{commandStatusQuery.data?.error ? (
+							<div className="mt-3 text-red-700">{commandStatusQuery.data.error}</div>
+						) : null}
+						{commandStatusQuery.error ? (
+							<div className="mt-3 text-red-700">
+								{getErrorMessage(commandStatusQuery.error, "Failed to load command status")}
+							</div>
+						) : null}
+					</div>
+				) : null}
 			</section>
 
 			<section className="rounded-md border border-neutral-200 p-5 lg:col-span-2">
@@ -490,6 +537,12 @@ type CreateRunnerKeyResult = {
 	runnerId: string
 }
 
+type StartedCommand = {
+	commandId: string
+	runnerId: string
+	sandboxId: string
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
 	return error instanceof Error ? error.message : fallback
 }
@@ -526,6 +579,21 @@ function formatBytes(bytes: number) {
 
 function formatPercent(value: number) {
 	return `${value.toFixed(1)}%`
+}
+
+function getCommandStatusClass(status: string | undefined) {
+	switch (status) {
+		case "succeeded":
+			return "bg-emerald-50 text-emerald-700"
+		case "failed":
+			return "bg-red-50 text-red-700"
+		case "running":
+			return "bg-sky-50 text-sky-700"
+		case "claimed":
+			return "bg-amber-50 text-amber-700"
+		default:
+			return "bg-neutral-100 text-neutral-600"
+	}
 }
 
 function formatRelativeTime(dateString: string) {

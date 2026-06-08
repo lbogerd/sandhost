@@ -127,6 +127,26 @@ export type LocalSandbox = z.infer<typeof localSandboxSchema>
 export type RunnerCommand = z.infer<typeof runnerCommandSchema>
 export type RunnerCommandResult = z.infer<typeof runnerCommandResultSchema>
 
+const getCommandStatusContract = oc
+	.input(
+		z.object({
+			commandId: z.string().min(1),
+		}),
+	)
+	.output(
+		z.object({
+			claimedAt: z.iso.datetime().nullable(),
+			commandId: z.string(),
+			createdAt: z.iso.datetime(),
+			error: z.string().nullable(),
+			finishedAt: z.iso.datetime().nullable(),
+			runnerId: z.string(),
+			startedAt: z.iso.datetime().nullable(),
+			status: runnerCommandStatusSchema,
+			type: z.string(),
+		}),
+	)
+
 const runnerHeartbeatContract = oc
 	.input(
 		z.object({
@@ -161,6 +181,7 @@ const runnerCommandResultContract = oc
 export const routerContract = oc.router({
 	authStatus: authStatusContract,
 	createRunnerApiKey: createRunnerApiKeyContract,
+	getCommandStatus: getCommandStatusContract,
 	hello: helloWorldContract,
 	listRunners: listRunnersContract,
 	startFakeSandbox: startFakeSandboxContract,
