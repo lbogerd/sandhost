@@ -65,37 +65,6 @@ const navItems = [
 	{ label: "Settings", icon: Settings },
 ]
 
-const metrics = [
-	{
-		label: "Total Machines",
-		value: "12",
-		delta: "↑ 2 this week",
-		tone: "blue",
-		icon: Server,
-	},
-	{
-		label: "Running Sandboxes",
-		value: "38",
-		delta: "↑ 7 this week",
-		tone: "green",
-		icon: LayoutDashboard,
-	},
-	{
-		label: "Stopped Sandboxes",
-		value: "15",
-		delta: "↓ 3 this week",
-		tone: "gray",
-		icon: Square,
-	},
-	{
-		label: "Alerts",
-		value: "3",
-		delta: "View all alerts ›",
-		tone: "red",
-		icon: AlertTriangle,
-	},
-]
-
 const rows: OverviewRow[] = [
 	{
 		id: "dev-server-01",
@@ -324,41 +293,6 @@ function UsageBar({ value, status }: { value: number; status?: Status }) {
 				style={{ width: `${Math.min(value, 100)}%` }}
 			/>
 		</div>
-	)
-}
-
-function ShellMetricCard({ metric }: { metric: (typeof metrics)[number] }) {
-	const Icon = metric.icon
-
-	return (
-		<Card>
-			<CardContent className="flex items-center gap-4 p-5">
-				<div
-					className={cn(
-						"rounded-xl p-3 ring-1",
-						toneClasses[metric.tone as keyof typeof toneClasses],
-					)}
-				>
-					<Icon className="h-5 w-5" />
-				</div>
-				<div className="min-w-0">
-					<p className="text-sm text-slate-500">{metric.label}</p>
-					<p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-						{metric.value}
-					</p>
-					<p
-						className={cn(
-							"mt-2 text-xs font-medium",
-							metric.tone === "red" || metric.delta.startsWith("↓")
-								? "text-red-600"
-								: "text-emerald-600",
-						)}
-					>
-						{metric.delta}
-					</p>
-				</div>
-			</CardContent>
-		</Card>
 	)
 }
 
@@ -688,11 +622,6 @@ function Index() {
 					<Header />
 					<div className="flex flex-1 gap-4 p-4">
 						<section className="min-w-0 flex-1 space-y-4">
-							<div className="grid gap-4 lg:grid-cols-4">
-								{metrics.map((metric) => (
-									<ShellMetricCard key={metric.label} metric={metric} />
-								))}
-							</div>
 							<OverviewTable />
 						</section>
 						<RightRail />
