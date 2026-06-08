@@ -1,138 +1,81 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { apiOrigin, orpc } from "../api.ts"
 import type { FormEvent } from "react"
 import { useState } from "react"
+import { apiOrigin, orpc } from "../api.ts"
 
 export const Route = createFileRoute("/")({
 	component: Index,
 })
 
 function Index() {
-	const [name, setName] = useState("oRPC")
-	const [authEmail, setAuthEmail] = useState<string | null>(null)
-	const [authMessage, setAuthMessage] = useState<string | null>(null)
-	const [authError, setAuthError] = useState<string | null>(null)
-	const [runnerName, setRunnerName] = useState("Local runner")
-	const [runnerId, setRunnerId] = useState(createRunnerId())
-	const [runnerKeyResult, setRunnerKeyResult] = useState<CreateRunnerKeyResult | null>(null)
-	const [runnerKeyError, setRunnerKeyError] = useState<string | null>(null)
-	const [runnerKeyCopied, setRunnerKeyCopied] = useState(false)
-	const [startingRunnerId, setStartingRunnerId] = useState<string | null>(null)
-	const [lastStartedCommand, setLastStartedCommand] = useState<StartedCommand | null>(null)
-	const [authBusyAction, setAuthBusyAction] = useState<"create" | "protected" | "sign-out" | null>(
-		null,
-	)
+	const [email, setEmail] = useState("")
+	const [password, setPassword] = useState("")
+	const [message, setMessage] = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
+	const [busyAction, setBusyAction] = useState<"sign-in" | "test-sign-in" | "sign-out" | null>(null)
 
-	const helloMutation = useMutation(orpc.hello.mutationOptions())
-	const createRunnerApiKeyMutation = useMutation(orpc.createRunnerApiKey.mutationOptions())
-	const startFakeSandboxMutation = useMutation(orpc.startFakeSandbox.mutationOptions())
 	const authStatusQuery = useQuery(
 		orpc.authStatus.queryOptions({
-			enabled: false,
-			retry: false,
-		}),
-	)
-	const runnersQuery = useQuery(
-		orpc.listRunners.queryOptions({
-			enabled: authEmail !== null,
-			refetchInterval: 5000,
-			retry: false,
-		}),
-	)
-	const commandStatusQuery = useQuery(
-		orpc.getCommandStatus.queryOptions({
-			enabled: lastStartedCommand !== null,
-			input: {
-				commandId: lastStartedCommand?.commandId ?? "",
-			},
-			refetchInterval: (query) => {
-				const status = query.state.data?.status
-				return status === "succeeded" || status === "failed" ? false : 1000
-			},
 			retry: false,
 		}),
 	)
 
-	function callHelloProcedure(event: FormEvent<HTMLFormElement>) {
+	const user = authStatusQuery.data?.user ?? null
+
+	async function signIn(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
-		helloMutation.mutate({ name })
-	}
-
-	async function createAndSignInTestUser() {
-		setAuthBusyAction("create")
-		setAuthError(null)
-		setAuthMessage(null)
+		setBusyAction("sign-in")
+		setMessage(null)
+		setError(null)
 
 		try {
-			const createResponse = await fetch(`${apiOrigin}/api/create-test-user`, {
-				credentials: "include",
-				method: "POST",
-			})
+			await signInWithEmailPassword(email, password)
+			const { data } = await authStatusQuery.refetch({ throwOnError: true })
 
-			if (!createResponse.ok) {
-				throw new Error("Failed to create test user")
-			}
-
-			const createdUser = (await createResponse.json()) as CreateTestUserResponse
-			const email = createdUser.user.user.email
-
-			const signInResponse = await fetch(`${apiOrigin}/api/auth/sign-in/email`, {
-				body: JSON.stringify({
-					email,
-					password: createdUser.password,
-				}),
-				credentials: "include",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				method: "POST",
-			})
-
-			if (!signInResponse.ok) {
-				throw new Error("Failed to sign in test user")
-			}
-
-			setAuthEmail(email)
-			setAuthMessage(`Signed in as ${email}`)
-			await runnersQuery.refetch()
-		} catch (error) {
-			setAuthEmail(null)
-			setAuthError(getErrorMessage(error, "Failed to create and sign in test user"))
+			setMessage(data ? `Signed in as ${data.user.email}` : "Signed in")
+		} catch (caughtError) {
+			setError(getErrorMessage(caughtError, "Failed to sign in"))
 		} finally {
-			setAuthBusyAction(null)
+			setBusyAction(null)
 		}
 	}
 
-	async function callProtectedProcedure() {
-		setAuthBusyAction("protected")
-		setAuthError(null)
-		setAuthMessage(null)
+	async function createAndSignInTestUser() {
+		setBusyAction("test-sign-in")
+		setMessage(null)
+		setError(null)
 
 		try {
-			const { data: result } = await authStatusQuery.refetch({
-				throwOnError: true,
+			const response = await fetch(`${apiOrigin}/api/create-test-user`, {
+				credentials: "include",
+				method: "POST",
 			})
 
-			if (!result) {
-				throw new Error("Protected route returned no response")
+			if (!response.ok) {
+				throw new Error("Failed to create test user")
 			}
 
-			setAuthEmail(result.user.email)
-			setAuthMessage(result.message)
-			await runnersQuery.refetch()
-		} catch (error) {
-			setAuthMessage(null)
-			setAuthError(getErrorMessage(error, "Protected route rejected the request"))
+			const createdUser = (await response.json()) as CreateTestUserResponse
+			const testEmail = createdUser.user.user.email
+
+			await signInWithEmailPassword(testEmail, createdUser.password)
+			const { data } = await authStatusQuery.refetch({ throwOnError: true })
+
+			setEmail(testEmail)
+			setPassword(createdUser.password)
+			setMessage(data ? `Signed in as ${data.user.email}` : "Signed in")
+		} catch (caughtError) {
+			setError(getErrorMessage(caughtError, "Failed to create and sign in test user"))
 		} finally {
-			setAuthBusyAction(null)
+			setBusyAction(null)
 		}
 	}
 
 	async function signOut() {
-		setAuthBusyAction("sign-out")
-		setAuthError(null)
-		setAuthMessage(null)
+		setBusyAction("sign-out")
+		setMessage(null)
+		setError(null)
 
 		try {
 			const response = await fetch(`${apiOrigin}/api/auth/sign-out`, {
@@ -148,377 +91,81 @@ function Index() {
 				throw new Error("Failed to sign out")
 			}
 
-			setAuthEmail(null)
-			setAuthMessage("Signed out")
-		} catch (error) {
-			setAuthError(getErrorMessage(error, "Failed to sign out"))
+			await authStatusQuery.refetch()
+			setMessage("Signed out")
+		} catch (caughtError) {
+			setError(getErrorMessage(caughtError, "Failed to sign out"))
 		} finally {
-			setAuthBusyAction(null)
-		}
-	}
-
-	async function createRunnerApiKey(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault()
-		setRunnerKeyError(null)
-		setRunnerKeyResult(null)
-		setRunnerKeyCopied(false)
-
-		try {
-			const result = await createRunnerApiKeyMutation.mutateAsync({
-				name: runnerName,
-				runnerId,
-			})
-
-			setRunnerKeyResult(result)
-			setAuthMessage(`Created runner key for ${result.runnerId}`)
-			await runnersQuery.refetch()
-		} catch (error) {
-			setRunnerKeyError(getErrorMessage(error, "Failed to create runner key"))
-		}
-	}
-
-	function resetRunnerId() {
-		setRunnerId(createRunnerId())
-		setRunnerKeyCopied(false)
-		setRunnerKeyResult(null)
-		setRunnerKeyError(null)
-	}
-
-	async function copyRunnerEnv() {
-		if (!runnerKeyResult) return
-
-		await navigator.clipboard.writeText(getRunnerEnvBlock(runnerKeyResult))
-		setRunnerKeyCopied(true)
-	}
-
-	async function startFakeSandbox(runnerId: string) {
-		setStartingRunnerId(runnerId)
-		setAuthError(null)
-		setAuthMessage(null)
-
-		try {
-			const result = await startFakeSandboxMutation.mutateAsync({ runnerId })
-			setLastStartedCommand(result)
-			setAuthMessage(`Queued fake sandbox ${result.sandboxId}`)
-			await runnersQuery.refetch()
-		} catch (error) {
-			setAuthError(getErrorMessage(error, "Failed to queue fake sandbox"))
-		} finally {
-			setStartingRunnerId(null)
+			setBusyAction(null)
 		}
 	}
 
 	return (
-		<div className="mx-auto grid max-w-6xl gap-6 p-6 lg:grid-cols-[0.95fr_1.05fr]">
+		<main>
+			<h1>Sign in</h1>
+
 			<section>
-				<h1 className="text-2xl font-semibold">oRPC hello</h1>
-				<p className="mt-1 text-sm text-neutral-600">
-					Call the example procedure from the API server.
-				</p>
+				<h2 className="bg-primary text-secondary">Session</h2>
+				{authStatusQuery.isLoading ? <p>Checking session...</p> : null}
+				{user ? (
+					<div>
+						<p>Signed in as {user.email}</p>
+						<p>User ID: {user.id}</p>
+						<p>Name: {user.name}</p>
+						<button disabled={busyAction !== null} onClick={signOut} type="button">
+							{busyAction === "sign-out" ? "Signing out..." : "Sign out"}
+						</button>
+					</div>
+				) : (
+					<p>No signed-in user.</p>
+				)}
+			</section>
 
-				<form className="mt-5 flex flex-col gap-3" onSubmit={callHelloProcedure}>
-					<label className="flex flex-col gap-1 text-sm font-medium">
-						Name
+			<section>
+				<h2>Email sign-in</h2>
+				<form onSubmit={signIn}>
+					<label>
+						Email
 						<input
-							className="rounded-md border border-neutral-300 px-3 py-2 font-normal outline-none focus:border-neutral-900"
-							value={name}
-							onChange={(event) => setName(event.target.value)}
-							placeholder="World"
+							autoComplete="email"
+							disabled={busyAction !== null}
+							name="email"
+							onChange={(event) => setEmail(event.target.value)}
+							required
+							type="email"
+							value={email}
 						/>
 					</label>
 
-					<button
-						className="w-fit rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={helloMutation.isPending}
-						type="submit"
-					>
-						{helloMutation.isPending ? "Calling..." : "Call hello"}
+					<label>
+						Password
+						<input
+							autoComplete="current-password"
+							disabled={busyAction !== null}
+							name="password"
+							onChange={(event) => setPassword(event.target.value)}
+							required
+							type="password"
+							value={password}
+						/>
+					</label>
+
+					<button disabled={busyAction !== null} type="submit">
+						{busyAction === "sign-in" ? "Signing in..." : "Sign in"}
 					</button>
 				</form>
-
-				<div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm">
-					<div className="font-medium text-neutral-700">Result</div>
-					<div className="mt-2 text-neutral-950">
-						{helloMutation.error
-							? `Error: ${getErrorMessage(helloMutation.error, "An unknown error occurred")}`
-							: (JSON.stringify(helloMutation.data, null, 2) ?? "No response yet.")}
-					</div>
-				</div>
 			</section>
 
-			<section className="rounded-md border border-neutral-200 p-5">
-				<div>
-					<h2 className="text-xl font-semibold">Protected oRPC route</h2>
-					<p className="mt-1 text-sm text-neutral-600">
-						Call a route backed by the secured middleware.
-					</p>
-				</div>
-
-				<div className="mt-5 flex flex-wrap gap-2">
-					<button
-						className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={authBusyAction !== null}
-						onClick={createAndSignInTestUser}
-						type="button"
-					>
-						{authBusyAction === "create" ? "Signing in..." : "Create test sign-in"}
-					</button>
-					<button
-						className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={authBusyAction !== null}
-						onClick={callProtectedProcedure}
-						type="button"
-					>
-						{authBusyAction === "protected" ? "Calling..." : "Call protected"}
-					</button>
-					<button
-						className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={authBusyAction !== null}
-						onClick={signOut}
-						type="button"
-					>
-						{authBusyAction === "sign-out" ? "Signing out..." : "Sign out"}
-					</button>
-				</div>
-
-				<dl className="mt-5 grid gap-3 text-sm">
-					<div className="rounded-md bg-neutral-50 p-3">
-						<dt className="font-medium text-neutral-700">Current user</dt>
-						<dd className="mt-1 text-neutral-950">{authEmail ?? "No signed-in user"}</dd>
-					</div>
-					<div className="rounded-md bg-neutral-50 p-3">
-						<dt className="font-medium text-neutral-700">Protected result</dt>
-						<dd className="mt-1 text-neutral-950">
-							{authMessage ?? authError ?? "No response yet."}
-						</dd>
-					</div>
-				</dl>
+			<section>
+				<h2>Local test user</h2>
+				<button disabled={busyAction !== null} onClick={createAndSignInTestUser} type="button">
+					{busyAction === "test-sign-in" ? "Creating test user..." : "Create test user and sign in"}
+				</button>
 			</section>
 
-			<section className="rounded-md border border-neutral-200 p-5 lg:col-span-2">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div>
-						<h2 className="text-xl font-semibold">Runners</h2>
-						<p className="mt-1 text-sm text-neutral-600">
-							Live heartbeat status from runner machines.
-						</p>
-					</div>
-					<button
-						className="w-fit rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={runnersQuery.isFetching || authEmail === null}
-						onClick={() => void runnersQuery.refetch()}
-						type="button"
-					>
-						{runnersQuery.isFetching ? "Refreshing..." : "Refresh"}
-					</button>
-				</div>
-
-				<div className="mt-5 overflow-x-auto rounded-md border border-neutral-200">
-					<table className="w-full min-w-[920px] border-collapse text-left text-sm">
-						<thead className="bg-neutral-50 text-xs font-semibold uppercase text-neutral-500">
-							<tr>
-								<th className="px-4 py-3">Status</th>
-								<th className="px-4 py-3">Runner</th>
-								<th className="px-4 py-3">Host</th>
-								<th className="px-4 py-3">CPU</th>
-								<th className="px-4 py-3">Memory free</th>
-								<th className="px-4 py-3">Sandboxes</th>
-								<th className="px-4 py-3">Last seen</th>
-								<th className="px-4 py-3">Actions</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-neutral-200">
-							{runnersQuery.data?.runners.map((runner) => (
-								<tr key={runner.id}>
-									<td className="px-4 py-3">
-										<span
-											className={[
-												"inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-												runner.online
-													? "bg-emerald-50 text-emerald-700"
-													: "bg-neutral-100 text-neutral-600",
-											].join(" ")}
-										>
-											{runner.status}
-										</span>
-									</td>
-									<td className="px-4 py-3">
-										<div className="font-medium text-neutral-950">{runner.name ?? runner.id}</div>
-										<div className="mt-1 font-mono text-xs text-neutral-500">{runner.id}</div>
-									</td>
-									<td className="px-4 py-3 text-neutral-700">{runner.hostname}</td>
-									<td className="px-4 py-3 text-neutral-700">
-										{runner.latestHeartbeat
-											? formatPercent(runner.latestHeartbeat.cpuUsagePercent)
-											: "No heartbeat"}
-									</td>
-									<td className="px-4 py-3 text-neutral-700">
-										{runner.latestHeartbeat
-											? `${formatBytes(runner.latestHeartbeat.memoryFreeBytes)} / ${formatBytes(
-													runner.latestHeartbeat.memoryTotalBytes,
-												)}`
-											: "No heartbeat"}
-									</td>
-									<td className="px-4 py-3 text-neutral-700">
-										{runner.latestHeartbeat?.runningSandboxCount ?? 0}
-									</td>
-									<td className="px-4 py-3 text-neutral-700">
-										{formatRelativeTime(runner.lastSeenAt)}
-									</td>
-									<td className="px-4 py-3">
-										<button
-											className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-											disabled={
-												!runner.online ||
-												startingRunnerId !== null ||
-												startFakeSandboxMutation.isPending
-											}
-											onClick={() => void startFakeSandbox(runner.id)}
-											type="button"
-										>
-											{startingRunnerId === runner.id ? "Queueing..." : "Start fake sandbox"}
-										</button>
-									</td>
-								</tr>
-							))}
-							{runnersQuery.data?.runners.length === 0 ? (
-								<tr>
-									<td className="px-4 py-6 text-neutral-600" colSpan={8}>
-										No runners have checked in yet.
-									</td>
-								</tr>
-							) : null}
-							{!runnersQuery.data && !runnersQuery.error ? (
-								<tr>
-									<td className="px-4 py-6 text-neutral-600" colSpan={8}>
-										{authEmail ? "Loading runners..." : "Sign in to view runners."}
-									</td>
-								</tr>
-							) : null}
-							{runnersQuery.error ? (
-								<tr>
-									<td className="px-4 py-6 text-red-700" colSpan={8}>
-										{getErrorMessage(runnersQuery.error, "Failed to load runners")}
-									</td>
-								</tr>
-							) : null}
-						</tbody>
-					</table>
-				</div>
-
-				{lastStartedCommand ? (
-					<div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-							<div>
-								<div className="font-medium text-neutral-950">
-									Fake sandbox {lastStartedCommand.sandboxId}
-								</div>
-								<div className="mt-1 font-mono text-xs text-neutral-500">
-									{lastStartedCommand.commandId}
-								</div>
-							</div>
-							<span
-								className={[
-									"inline-flex w-fit items-center rounded-full px-2 py-1 text-xs font-medium",
-									getCommandStatusClass(commandStatusQuery.data?.status),
-								].join(" ")}
-							>
-								{commandStatusQuery.data?.status ??
-									(commandStatusQuery.isFetching ? "loading" : "queued")}
-							</span>
-						</div>
-						{commandStatusQuery.data?.error ? (
-							<div className="mt-3 text-red-700">{commandStatusQuery.data.error}</div>
-						) : null}
-						{commandStatusQuery.error ? (
-							<div className="mt-3 text-red-700">
-								{getErrorMessage(commandStatusQuery.error, "Failed to load command status")}
-							</div>
-						) : null}
-					</div>
-				) : null}
-			</section>
-
-			<section className="rounded-md border border-neutral-200 p-5 lg:col-span-2">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div>
-						<h2 className="text-xl font-semibold">Runner key</h2>
-						<p className="mt-1 text-sm text-neutral-600">
-							Create the API key used by the runner daemon.
-						</p>
-					</div>
-					<button
-						className="w-fit rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={createRunnerApiKeyMutation.isPending}
-						onClick={resetRunnerId}
-						type="button"
-					>
-						New ID
-					</button>
-				</div>
-
-				<form className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={createRunnerApiKey}>
-					<label className="flex min-w-0 flex-col gap-1 text-sm font-medium">
-						Name
-						<input
-							className="rounded-md border border-neutral-300 px-3 py-2 font-normal outline-none focus:border-neutral-900"
-							value={runnerName}
-							onChange={(event) => setRunnerName(event.target.value)}
-							placeholder="Local runner"
-						/>
-					</label>
-
-					<label className="flex min-w-0 flex-col gap-1 text-sm font-medium">
-						Runner ID
-						<input
-							className="rounded-md border border-neutral-300 px-3 py-2 font-mono text-sm font-normal outline-none focus:border-neutral-900"
-							value={runnerId}
-							onChange={(event) => setRunnerId(event.target.value)}
-							placeholder="runner-local"
-						/>
-					</label>
-
-					<button
-						className="self-end rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-						disabled={
-							createRunnerApiKeyMutation.isPending ||
-							runnerName.length === 0 ||
-							runnerId.length === 0
-						}
-						type="submit"
-					>
-						{createRunnerApiKeyMutation.isPending ? "Creating..." : "Create key"}
-					</button>
-				</form>
-
-				<div className="mt-5 rounded-md bg-neutral-50 p-4 text-sm">
-					<div className="font-medium text-neutral-700">Runner environment</div>
-					{runnerKeyResult ? (
-						<>
-							<pre className="mt-3 overflow-x-auto rounded-md bg-neutral-950 p-4 text-xs leading-6 text-neutral-50">
-								{getRunnerEnvBlock(runnerKeyResult)}
-							</pre>
-							<div className="mt-3 flex flex-wrap items-center gap-2">
-								<button
-									className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-medium"
-									onClick={copyRunnerEnv}
-									type="button"
-								>
-									{runnerKeyCopied ? "Copied" : "Copy env"}
-								</button>
-								<span className="text-neutral-600">
-									The key is only shown immediately after creation.
-								</span>
-							</div>
-						</>
-					) : (
-						<div className="mt-2 text-neutral-950">
-							{runnerKeyError ?? "Sign in, then create a runner key."}
-						</div>
-					)}
-				</div>
-			</section>
-		</div>
+			{message ? <p>{message}</p> : null}
+			{error ? <p role="alert">{error}</p> : null}
+		</main>
 	)
 }
 
@@ -531,80 +178,34 @@ type CreateTestUserResponse = {
 	}
 }
 
-type CreateRunnerKeyResult = {
-	apiKey: string
-	name: string
-	runnerId: string
+async function signInWithEmailPassword(email: string, password: string) {
+	const response = await fetch(`${apiOrigin}/api/auth/sign-in/email`, {
+		body: JSON.stringify({
+			email,
+			password,
+		}),
+		credentials: "include",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		method: "POST",
+	})
+
+	if (!response.ok) {
+		const message = await readErrorMessage(response)
+		throw new Error(message ?? "Failed to sign in")
+	}
 }
 
-type StartedCommand = {
-	commandId: string
-	runnerId: string
-	sandboxId: string
+async function readErrorMessage(response: Response) {
+	try {
+		const body = (await response.json()) as { message?: unknown }
+		return typeof body.message === "string" && body.message.length > 0 ? body.message : null
+	} catch {
+		return null
+	}
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
 	return error instanceof Error ? error.message : fallback
-}
-
-function createRunnerId() {
-	if ("crypto" in globalThis && "randomUUID" in crypto) {
-		return `runner-${crypto.randomUUID().slice(0, 8)}`
-	}
-
-	return `runner-${Math.random().toString(36).slice(2, 10)}`
-}
-
-function getRunnerEnvBlock(result: CreateRunnerKeyResult) {
-	return [
-		`RUNNER_ID=${result.runnerId}`,
-		`RUNNER_API_KEY=${result.apiKey}`,
-		`API_RPC_URL=${apiOrigin}/rpc`,
-		"HEARTBEAT_INTERVAL_MS=5000",
-	].join("\n")
-}
-
-function formatBytes(bytes: number) {
-	const units = ["B", "KB", "MB", "GB", "TB"]
-	let value = bytes
-	let unitIndex = 0
-
-	while (value >= 1024 && unitIndex < units.length - 1) {
-		value /= 1024
-		unitIndex += 1
-	}
-
-	return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
-}
-
-function formatPercent(value: number) {
-	return `${value.toFixed(1)}%`
-}
-
-function getCommandStatusClass(status: string | undefined) {
-	switch (status) {
-		case "succeeded":
-			return "bg-emerald-50 text-emerald-700"
-		case "failed":
-			return "bg-red-50 text-red-700"
-		case "running":
-			return "bg-sky-50 text-sky-700"
-		case "claimed":
-			return "bg-amber-50 text-amber-700"
-		default:
-			return "bg-neutral-100 text-neutral-600"
-	}
-}
-
-function formatRelativeTime(dateString: string) {
-	const secondsAgo = Math.max(0, Math.round((Date.now() - Date.parse(dateString)) / 1000))
-
-	if (secondsAgo < 5) return "just now"
-	if (secondsAgo < 60) return `${secondsAgo}s ago`
-
-	const minutesAgo = Math.round(secondsAgo / 60)
-	if (minutesAgo < 60) return `${minutesAgo}m ago`
-
-	const hoursAgo = Math.round(minutesAgo / 60)
-	return `${hoursAgo}h ago`
 }

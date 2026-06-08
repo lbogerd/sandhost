@@ -168,15 +168,13 @@ const runnerHeartbeatContract = oc
 		}),
 	)
 
-const runnerCommandResultContract = oc
-	.input(runnerCommandResultSchema)
-	.output(
-		z.object({
-			acceptedAt: z.iso.datetime(),
-			commandId: z.string(),
-			status: runnerCommandStatusSchema,
-		}),
-	)
+const runnerCommandResultContract = oc.input(runnerCommandResultSchema).output(
+	z.object({
+		acceptedAt: z.iso.datetime(),
+		commandId: z.string(),
+		status: runnerCommandStatusSchema,
+	}),
+)
 
 export const routerContract = oc.router({
 	authStatus: authStatusContract,

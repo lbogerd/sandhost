@@ -3,7 +3,8 @@
 	"version": "0.0.1",
 	"type": "module",
 	"exports": {
-		".": "./src/components.tsx"
+		".": "./src/components.tsx",
+		"./tailwind.css": "./src/tailwind.css"
 	},
 	"devDependencies": {
 		"@types/react": "catalog:"

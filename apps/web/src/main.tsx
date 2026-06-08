@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
+import "./tailwind.css"
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"

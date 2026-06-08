@@ -214,6 +214,9 @@ importers:
       '@wtrn/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@wtrn/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       react:
         specifier: 'catalog:'
         version: 19.2.7
