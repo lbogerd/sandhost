@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { Activity, Box, FileText, Home, Server, Settings } from "lucide-react"
 import { Sidebar, type SidebarNavItem } from "../components/sidebar"
+import { Topbar } from "../components/topbar"
 
 const navItems = [
 	{ label: "Overview", icon: Home, to: "/" },
@@ -21,7 +22,10 @@ const RootLayout = () => {
 				<div className="min-h-screen bg-slate-50 text-slate-950">
 					<div className="flex min-h-screen">
 						<Sidebar navItems={navItems} />
-						<Outlet />
+						<div className="flex min-w-0 flex-1 flex-col">
+							<Topbar />
+							<Outlet />
+						</div>
 					</div>
 				</div>
 			) : (
