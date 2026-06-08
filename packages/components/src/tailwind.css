@@ -1,3 +1,12 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* this feels very iffy but is the least stupid way to make sure the consuming @wtrn/web app 
+has all the classes it needs */
+@source "./";
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.147 0.004 49.25);
@@ -113,4 +122,13 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
 }

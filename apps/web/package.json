@@ -17,8 +17,13 @@
 		"@tanstack/react-router-devtools": "catalog:",
 		"@wtrn/api-client": "workspace:*",
 		"@wtrn/components": "workspace:*",
+		"lucide-react": "catalog:",
 		"react": "catalog:",
-		"react-dom": "19.2.7"
+		"react-dom": "19.2.7",
+		"shadcn": "catalog:",
+		"tailwind-merge": "catalog:",
+		"tailwind-variants": "catalog:",
+		"tw-animate-css": "catalog:"
 	},
 	"devDependencies": {
 		"@babel/core": "7.29.0",

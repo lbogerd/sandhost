@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import type { FormEvent } from "react"
 import { useState } from "react"
 import { apiOrigin, orpc } from "../api.ts"
+import { AccordionTest } from "../components/accordion-test.tsx"
 
 export const Route = createFileRoute("/")({
 	component: Index,
@@ -162,6 +163,8 @@ function Index() {
 					{busyAction === "test-sign-in" ? "Creating test user..." : "Create test user and sign in"}
 				</button>
 			</section>
+
+			<AccordionTest />
 
 			{message ? <p>{message}</p> : null}
 			{error ? <p role="alert">{error}</p> : null}
