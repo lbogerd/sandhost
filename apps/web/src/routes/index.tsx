@@ -29,7 +29,14 @@ import {
 } from "lucide-react"
 import { cn } from "tailwind-variants"
 import { Avatar, AvatarFallback, AvatarImage } from "@wtrn/components/avatar"
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@wtrn/components/table"
+import {
+	Table,
+	TableHeader,
+	TableRow,
+	TableHead,
+	TableBody,
+	TableCell,
+} from "@wtrn/components/table"
 
 type Status = "healthy" | "running" | "warning" | "critical" | "stopped" | "starting" | "error"
 type RowType = "Machine" | "Sandbox"
