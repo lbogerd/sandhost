@@ -7,11 +7,14 @@ settings:
 catalogs:
   default:
     '@base-ui/react':
-      specifier: ^1.5.0
+      specifier: 1.5.0
       version: 1.5.0
     '@better-auth/api-key':
       specifier: 1.6.11
       version: 1.6.11
+    '@fontsource-variable/instrument-sans':
+      specifier: 5.2.8
+      version: 5.2.8
     '@hono/node-server':
       specifier: 2.0.4
       version: 2.0.4
@@ -214,6 +217,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@fontsource-variable/instrument-sans':
+        specifier: 'catalog:'
+        version: 5.2.8
       '@orpc/tanstack-query':
         specifier: 'catalog:'
         version: 1.14.4(@opentelemetry/api@1.9.0)(@orpc/client@1.14.4(@opentelemetry/api@1.9.0))(@tanstack/query-core@5.100.13)
@@ -1221,6 +1227,9 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@fontsource-variable/instrument-sans@5.2.8':
+    resolution: {integrity: sha512-mTCaukbdIjjoipj2E3Q5XoZM3ZxJWdzyHevf/LG/0PHlfF9Q85pxOM7B7A9MerFyxmRzz5kVlumgIvgDSG4CPg==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -4793,6 +4802,8 @@ snapshots:
       react-dom: 19.2.7(react@19.2.7)
 
   '@floating-ui/utils@0.2.11': {}
+
+  '@fontsource-variable/instrument-sans@5.2.8': {}
 
   '@hono/node-server@1.19.14(hono@4.12.23)':
     dependencies:

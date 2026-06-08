@@ -1,2 +1,6 @@
 @import "tailwindcss";
 @import "@wtrn/components/tailwind.css";
+
+body {
+	font-family: "Instrument Sans Variable", sans-serif;
+}
