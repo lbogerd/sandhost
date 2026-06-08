@@ -1,15 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { Activity, useEffect } from "react"
+import { useEffect } from "react"
 import { orpc } from "../api.ts"
 import { Button } from "@wtrn/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@wtrn/components/card"
 import { Input } from "@wtrn/components/input"
 import {
-	Home,
+	Activity,
 	Box,
 	FileText,
-	Settings,
 	LayoutDashboard,
 	Square,
 	AlertTriangle,
@@ -18,13 +17,11 @@ import {
 	CornerDownRight,
 	MoreVertical,
 	ChevronLeft,
-	ChevronsLeft,
 	Search,
 	Monitor,
 	Bell,
 	Plus,
 	RefreshCw,
-	Server,
 	Terminal,
 } from "lucide-react"
 import { cn } from "tailwind-variants"
@@ -55,15 +52,6 @@ type OverviewRow = {
 	expanded?: boolean
 	child?: boolean
 }
-
-const navItems = [
-	{ label: "Overview", icon: Home, active: true },
-	{ label: "Machines", icon: Server },
-	{ label: "Sandboxes", icon: Box },
-	{ label: "Activity", icon: Activity },
-	{ label: "Logs", icon: FileText },
-	{ label: "Settings", icon: Settings },
-]
 
 const rows: OverviewRow[] = [
 	{
@@ -415,52 +403,6 @@ function OverviewTable() {
 	)
 }
 
-function Sidebar() {
-	return (
-		<aside className="flex w-64 shrink-0 flex-col border-r bg-white">
-			<div className="flex h-16 items-center gap-3 px-6">
-				<div className="flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 ring-1 ring-blue-100">
-					<Box className="h-5 w-5" />
-				</div>
-				<span className="text-lg font-semibold tracking-tight">Sandbox Manager</span>
-			</div>
-			<nav className="flex-1 space-y-1 px-3 py-5">
-				{navItems.map((item) => {
-					const Icon = item.icon
-					return (
-						<button
-							key={item.label}
-							type="button"
-							className={cn(
-								"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600",
-								item.active && "bg-blue-50 text-blue-700",
-							)}
-						>
-							<Icon className="h-4 w-4" children={undefined} />
-							{item.label}
-						</button>
-					)
-				})}
-			</nav>
-			<div className="p-4">
-				<Card>
-					<CardContent className="p-4">
-						<div className="flex items-center gap-2">
-							<StatusDot status="healthy" />
-							<p className="text-sm font-medium">System Health</p>
-						</div>
-						<p className="mt-2 text-xs text-emerald-600">All systems operational</p>
-						<p className="mt-8 text-xs text-slate-500">Version 1.4.2</p>
-					</CardContent>
-				</Card>
-				<Button variant="ghost" size="icon" className="mt-3 h-8 w-8">
-					<ChevronsLeft className="h-4 w-4" />
-				</Button>
-			</div>
-		</aside>
-	)
-}
-
 function Header() {
 	return (
 		<header className="flex h-16 items-center gap-4 border-b bg-white px-5">
@@ -615,19 +557,14 @@ function Index() {
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-50 text-slate-950">
-			<div className="flex min-h-screen">
-				<Sidebar />
-				<main className="flex min-w-0 flex-1 flex-col">
-					<Header />
-					<div className="flex flex-1 gap-4 p-4">
-						<section className="min-w-0 flex-1 space-y-4">
-							<OverviewTable />
-						</section>
-						<RightRail />
-					</div>
-				</main>
+		<main className="flex min-w-0 flex-1 flex-col">
+			<Header />
+			<div className="flex flex-1 gap-4 p-4">
+				<section className="min-w-0 flex-1 space-y-4">
+					<OverviewTable />
+				</section>
+				<RightRail />
 			</div>
-		</div>
+		</main>
 	)
 }

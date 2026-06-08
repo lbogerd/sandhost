@@ -1,8 +1,10 @@
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
+import { TanStackDevtools } from "@tanstack/react-devtools"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import "./tailwind.css"
 import "@fontsource-variable/instrument-sans/wght.css"
 
@@ -28,7 +30,20 @@ if (!rootElement.innerHTML) {
 		<StrictMode>
 			<QueryClientProvider client={queryClient}>
 				<RouterProvider router={router} />
-				{import.meta.env.DEV ? <ReactQueryDevtools /> : null}
+				{import.meta.env.DEV ? (
+					<TanStackDevtools
+						plugins={[
+							{
+								name: "TanStack Query",
+								render: <ReactQueryDevtoolsPanel />,
+							},
+							{
+								name: "TanStack Router",
+								render: <TanStackRouterDevtoolsPanel router={router} />,
+							},
+						]}
+					/>
+				) : null}
 			</QueryClientProvider>
 		</StrictMode>,
 	)
