@@ -286,7 +286,7 @@ function UsageBar({ value, status }: { value: number; status?: Status }) {
 
 function OverviewTable() {
 	return (
-		<Card className="overflow-hidden">
+		<Card className="overflow-hidden gap-0">
 			<CardHeader className="border-b px-5 py-4">
 				<CardTitle className="text-base">Machines &amp; Sandboxes</CardTitle>
 			</CardHeader>
