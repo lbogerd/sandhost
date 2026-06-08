@@ -29,29 +29,29 @@ export const Topbar = () => {
 	return (
 		<header className="flex h-16 items-center gap-4 border-b bg-white px-5">
 			<div className="relative flex-1">
-				<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+				<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
 					className="h-10 pl-9 pr-14"
 					placeholder="Search machines or sandboxes..."
 					id="search-input"
 				/>
-				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border bg-slate-50 px-2 py-0.5 text-xs text-slate-500">
+				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
 					{isMac ? "⌘ /" : "Ctrl /"}
 				</kbd>
 			</div>
 			<Button variant="outline" className="h-10 min-w-44 justify-between">
 				<span className="flex items-center gap-2">
-					<Monitor className="h-4 w-4" />
+					<Monitor className="size-4" />
 					All Machines
 				</span>
-				<ChevronDown className="h-4 w-4" />
+				<ChevronDown className="size-4" />
 			</Button>
 			<div className="ml-auto flex items-center gap-4">
 				<button
 					type="button"
-					className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100"
+					className="relative rounded-full p-2 text-muted-foreground hover:bg-muted"
 				>
-					<Bell className="h-5 w-5" />
+					<Bell className="size-5" />
 					<span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">
 						3
 					</span>
@@ -62,7 +62,7 @@ export const Topbar = () => {
 						<AvatarFallback>AM</AvatarFallback>
 					</Avatar>
 					<span className="text-sm font-medium">Alex Morgan</span>
-					<ChevronDown className="h-4 w-4 text-slate-500" />
+					<ChevronDown className="size-4 text-muted-foreground" />
 				</div>
 			</div>
 		</header>
