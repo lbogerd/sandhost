@@ -239,10 +239,12 @@ const dotClassByStatus: Record<Status, string> = {
 
 const toneClasses = {
 	blue: "bg-blue-50 text-blue-600 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60",
-	green: "bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
+	green:
+		"bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
 	gray: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
 	red: "bg-red-50 text-red-600 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60",
-	amber: "bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
+	amber:
+		"bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
 } as const
 
 export const Route = createFileRoute("/")({
@@ -331,20 +333,32 @@ function OverviewTable() {
 										) : (
 											<CornerDownRight className="h-4 w-4 text-slate-300 dark:text-muted-foreground/60" />
 										)}
-										<span className={cn(row.child && "font-normal text-slate-700 dark:text-foreground/80")}>
+										<span
+											className={cn(
+												row.child && "font-normal text-slate-700 dark:text-foreground/80",
+											)}
+										>
 											{row.name}
 										</span>
 									</div>
 								</TableCell>
-								<TableCell className="text-xs text-slate-500 dark:text-muted-foreground">{row.type}</TableCell>
-								<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">{row.details}</TableCell>
-								<TableCell className="text-sm text-slate-700 dark:text-foreground/80">{row.usageOrPort}</TableCell>
+								<TableCell className="text-xs text-slate-500 dark:text-muted-foreground">
+									{row.type}
+								</TableCell>
+								<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">
+									{row.details}
+								</TableCell>
+								<TableCell className="text-sm text-slate-700 dark:text-foreground/80">
+									{row.usageOrPort}
+								</TableCell>
 								<TableCell>
 									<div className="text-xs text-slate-700 dark:text-foreground/80">{row.cpu}%</div>
 									<UsageBar value={row.cpu} status={row.status} />
 								</TableCell>
 								<TableCell>
-									<div className="text-xs text-slate-700 dark:text-foreground/80">{row.memoryLabel}</div>
+									<div className="text-xs text-slate-700 dark:text-foreground/80">
+										{row.memoryLabel}
+									</div>
 									<UsageBar value={row.memoryPercent} status={row.status} />
 								</TableCell>
 								<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">
@@ -425,10 +439,18 @@ function RightRail() {
 									<Icon className="h-3.5 w-3.5" children={undefined} />
 								</div>
 								<div>
-									<p className="font-medium leading-5 text-slate-800 dark:text-foreground">{item.title}</p>
-									{item.detail && <p className="leading-5 text-slate-600 dark:text-muted-foreground">{item.detail}</p>}
+									<p className="font-medium leading-5 text-slate-800 dark:text-foreground">
+										{item.title}
+									</p>
+									{item.detail && (
+										<p className="leading-5 text-slate-600 dark:text-muted-foreground">
+											{item.detail}
+										</p>
+									)}
 								</div>
-								<span className="text-xs text-slate-500 dark:text-muted-foreground">{item.time}</span>
+								<span className="text-xs text-slate-500 dark:text-muted-foreground">
+									{item.time}
+								</span>
 							</div>
 						)
 					})}
@@ -457,7 +479,9 @@ function RightRail() {
 								<AlertTriangle className="h-3.5 w-3.5" />
 							</div>
 							<div>
-								<p className="font-medium leading-5 text-slate-800 dark:text-foreground">{item.title}</p>
+								<p className="font-medium leading-5 text-slate-800 dark:text-foreground">
+									{item.title}
+								</p>
 								<p className="leading-5 text-slate-600 dark:text-muted-foreground">{item.detail}</p>
 							</div>
 							<span className="text-xs text-slate-500 dark:text-muted-foreground">{item.time}</span>

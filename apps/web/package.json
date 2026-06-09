@@ -20,6 +20,7 @@
 		"@tanstack/react-router-devtools": "catalog:",
 		"@wtrn/api-client": "workspace:*",
 		"@wtrn/components": "workspace:*",
+		"@wtrn/rpc-contract": "workspace:*",
 		"lucide-react": "catalog:",
 		"react": "catalog:",
 		"react-dom": "19.2.7",

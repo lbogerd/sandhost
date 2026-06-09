@@ -1,7 +1,7 @@
 # web
 
-React/Vite UI for the current Sandhost vertical slice: auth smoke tests, runner
-API-key creation, runner status, and fake sandbox start commands.
+React/Vite UI for the current Sandhost vertical slice: auth and sandbox
+management (create/stop/kill with live status from the Kubernetes backend).
 
 ```sh
 pnpm --filter web dev

@@ -5,9 +5,8 @@ allowBuilds:
   esbuild: true
   msw: true
 catalog:
-  "@better-auth/api-key": 1.6.11
   "@hono/node-server": 2.0.4
-  "@opentelemetry/api": 1.9.0
+  "@kubernetes/client-node": 1.4.0
   "@orpc/client": 1.14.4
   "@orpc/contract": 1.14.4
   "@orpc/server": 1.14.4
@@ -43,6 +42,6 @@ catalog:
   shadcn: 4.10.0
   "@base-ui/react": 1.5.0
   "@fontsource-variable/instrument-sans": 5.2.8
-  '@tanstack/react-hotkeys': ^0.10.0
+  "@tanstack/react-hotkeys": ^0.10.0
 
 catalogMode: prefer

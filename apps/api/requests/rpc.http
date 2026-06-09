@@ -12,3 +12,83 @@ Content-Type: application/json
 		"name": "oRPC"
 	}
 }
+
+###
+# @name createUser
+
+POST {{origin}}/api/create-test-user
+
+###
+# @name login
+
+POST {{origin}}/api/auth/sign-in/email
+Content-Type: application/json
+Origin: {{origin}}
+
+{
+	"email": "{{createUser.response.body.user.user.email}}",
+	"password": "{{createUser.response.body.password}}"
+}
+
+###
+# @name createSandbox
+
+POST {{host}}/sandbox/create
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {
+		"env": {}
+	}
+}
+
+###
+# @name listSandboxes
+
+POST {{host}}/sandbox/list
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {}
+}
+
+###
+# @name getSandbox
+
+POST {{host}}/sandbox/get
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {
+		"id": "{{createSandbox.response.body.json.id}}"
+	}
+}
+
+###
+# @name stopSandbox
+
+POST {{host}}/sandbox/stop
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {
+		"id": "{{createSandbox.response.body.json.id}}"
+	}
+}
+
+###
+# @name killSandbox
+
+POST {{host}}/sandbox/kill
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {
+		"id": "{{createSandbox.response.body.json.id}}"
+	}
+}

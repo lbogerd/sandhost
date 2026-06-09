@@ -16,175 +16,60 @@ const authStatusContract = oc.output(
 	}),
 )
 
-const createRunnerApiKeyContract = oc
-	.input(
-		z.object({
-			name: z.string().min(1).max(80),
-			runnerId: z.string().min(1).max(120),
-		}),
-	)
-	.output(
-		z.object({
-			apiKey: z.string(),
-			name: z.string(),
-			runnerId: z.string(),
-		}),
-	)
+export const sandboxStatusSchema = z.enum(["starting", "running", "stopping", "stopped", "failed"])
 
-const listRunnersContract = oc.output(
-	z.object({
-		runners: z.array(
-			z.object({
-				hostname: z.string(),
-				id: z.string(),
-				lastSeenAt: z.iso.datetime(),
-				latestHeartbeat: z
-					.object({
-						cpuUsagePercent: z.number(),
-						memoryFreeBytes: z.number(),
-						memoryTotalBytes: z.number(),
-						reportedAt: z.iso.datetime(),
-						runningSandboxCount: z.number(),
-					})
-					.nullable(),
-				name: z.string().nullable(),
-				online: z.boolean(),
-				status: z.enum(["online", "offline"]),
-			}),
-		),
-	}),
-)
-
-const startFakeSandboxContract = oc
-	.input(
-		z.object({
-			runnerId: z.string().min(1),
-		}),
-	)
-	.output(
-		z.object({
-			commandId: z.string(),
-			runnerId: z.string(),
-			sandboxId: z.string(),
-		}),
-	)
-
-export const runnerCommandStatusSchema = z.enum([
-	"pending",
-	"claimed",
-	"running",
-	"succeeded",
-	"failed",
-])
-
-export const localSandboxSchema = z.object({
+export const sandboxSchema = z.object({
+	createdAt: z.iso.datetime(),
+	env: z.record(z.string(), z.string()),
+	finishedAt: z.iso.datetime().nullable(),
 	id: z.string(),
+	image: z.string(),
+	name: z.string().nullable(),
+	namespace: z.string(),
+	podName: z.string(),
 	startedAt: z.iso.datetime().nullable(),
-	state: z.enum(["starting", "running", "stopping", "stopped", "failed"]),
+	status: sandboxStatusSchema,
+	statusReason: z.string().nullable(),
 })
 
-export const runnerCommandSchema = z.discriminatedUnion("type", [
-	z.object({
-		id: z.string(),
-		type: z.literal("startSandbox"),
-		sandboxId: z.string(),
-		image: z.string(),
-		env: z.record(z.string(), z.string()).default({}),
-	}),
-	z.object({
-		id: z.string(),
-		type: z.literal("stopSandbox"),
-		sandboxId: z.string(),
-	}),
-	z.object({
-		id: z.string(),
-		type: z.literal("killSandbox"),
-		sandboxId: z.string(),
-	}),
-])
+export type SandboxStatus = z.infer<typeof sandboxStatusSchema>
+export type Sandbox = z.infer<typeof sandboxSchema>
 
-export const runnerCommandResultSchema = z.discriminatedUnion("status", [
-	z.object({
-		commandId: z.string().min(1),
-		runnerId: z.string().min(1),
-		status: z.literal("running"),
-	}),
-	z.object({
-		commandId: z.string().min(1),
-		runnerId: z.string().min(1),
-		status: z.literal("succeeded"),
-		sandbox: localSandboxSchema.optional(),
-	}),
-	z.object({
-		commandId: z.string().min(1),
-		runnerId: z.string().min(1),
-		status: z.literal("failed"),
-		error: z.string().min(1),
-	}),
-])
+const envKeySchema = z
+	.string()
+	.regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Invalid environment variable name")
 
-export type LocalSandbox = z.infer<typeof localSandboxSchema>
-export type RunnerCommand = z.infer<typeof runnerCommandSchema>
-export type RunnerCommandResult = z.infer<typeof runnerCommandResultSchema>
-
-const getCommandStatusContract = oc
+const createSandboxContract = oc
 	.input(
 		z.object({
-			commandId: z.string().min(1),
+			command: z.array(z.string().min(1)).optional(),
+			env: z.record(envKeySchema, z.string()).default({}),
+			image: z.string().min(1).optional(),
+			name: z.string().min(1).max(63).optional(),
 		}),
 	)
-	.output(
-		z.object({
-			claimedAt: z.iso.datetime().nullable(),
-			commandId: z.string(),
-			createdAt: z.iso.datetime(),
-			error: z.string().nullable(),
-			finishedAt: z.iso.datetime().nullable(),
-			runnerId: z.string(),
-			startedAt: z.iso.datetime().nullable(),
-			status: runnerCommandStatusSchema,
-			type: z.string(),
-		}),
-	)
+	.output(sandboxSchema)
 
-const runnerHeartbeatContract = oc
-	.input(
-		z.object({
-			hostname: z.string().min(1),
-			resources: z.object({
-				cpuUsagePercent: z.number().min(0).max(100),
-				memoryFreeBytes: z.number().nonnegative(),
-				memoryTotalBytes: z.number().positive(),
-			}),
-			runnerId: z.string().min(1),
-			sandboxes: z.array(localSandboxSchema),
-			version: z.string().min(1),
-		}),
-	)
-	.output(
-		z.object({
-			acceptedAt: z.iso.datetime(),
-			commands: z.array(runnerCommandSchema),
-		}),
-	)
+const getSandboxContract = oc.input(z.object({ id: z.string().min(1) })).output(sandboxSchema)
 
-const runnerCommandResultContract = oc.input(runnerCommandResultSchema).output(
+const stopSandboxContract = oc.input(z.object({ id: z.string().min(1) })).output(sandboxSchema)
+
+const killSandboxContract = oc.input(z.object({ id: z.string().min(1) })).output(sandboxSchema)
+
+const listSandboxesContract = oc.output(
 	z.object({
-		acceptedAt: z.iso.datetime(),
-		commandId: z.string(),
-		status: runnerCommandStatusSchema,
+		sandboxes: z.array(sandboxSchema),
 	}),
 )
 
 export const routerContract = oc.router({
 	authStatus: authStatusContract,
-	createRunnerApiKey: createRunnerApiKeyContract,
-	getCommandStatus: getCommandStatusContract,
 	hello: helloWorldContract,
-	listRunners: listRunnersContract,
-	startFakeSandbox: startFakeSandboxContract,
-	runner: oc.router({
-		heartbeat: runnerHeartbeatContract,
-		reportCommandResult: runnerCommandResultContract,
+	sandbox: oc.router({
+		create: createSandboxContract,
+		get: getSandboxContract,
+		kill: killSandboxContract,
+		list: listSandboxesContract,
+		stop: stopSandboxContract,
 	}),
 })

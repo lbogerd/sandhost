@@ -8,6 +8,7 @@
 	},
 	"dependencies": {
 		"@hono/node-server": "catalog:",
+		"@kubernetes/client-node": "catalog:",
 		"@orpc/server": "catalog:",
 		"@t3-oss/env-core": "catalog:",
 		"@wtrn/auth": "workspace:*",

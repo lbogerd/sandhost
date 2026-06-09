@@ -25,10 +25,7 @@ export function Sidebar({ navItems }: SidebarProps) {
 			)}
 		>
 			<div
-				className={cn(
-					"flex h-16 items-center gap-3 px-6",
-					isMinimized && "justify-center px-0",
-				)}
+				className={cn("flex h-16 items-center gap-3 px-6", isMinimized && "justify-center px-0")}
 			>
 				<div className="flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 ring-1 ring-blue-100 dark:text-blue-300 dark:ring-blue-900/60">
 					<Box className="h-5 w-5" />

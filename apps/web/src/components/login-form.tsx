@@ -126,7 +126,9 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
 									{busyAction === "test-sign-in" ? "Creating test user..." : "Login as test user"}
 								</Button>
 								{error ? <FieldError>{error}</FieldError> : null}
-								<FieldDescription className="text-center">Use a local test user for quick checks.</FieldDescription>
+								<FieldDescription className="text-center">
+									Use a local test user for quick checks.
+								</FieldDescription>
 							</Field>
 						</FieldGroup>
 					</form>

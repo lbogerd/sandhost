@@ -1,15 +1,16 @@
 {
 	"name": "sandhost",
 	"version": "0.0.1",
-	"description": "distributed sandbox hosting using microsandboxes",
+	"description": "sandbox hosting on Kubernetes",
 	"author": "wtrn.dev",
 	"type": "module",
 	"scripts": {
 		"dev": "turbo dev",
 		"dev:api": "turbo dev --filter=@wtrn/api",
 		"dev:web": "turbo dev --filter=@wtrn/web",
-		"dev:runner": "turbo dev --filter=@wtrn/runner",
 		"check": "oxlint --fix && oxfmt",
+		"k8s:up": "bash scripts/k8s-up.sh",
+		"k8s:down": "bash scripts/k8s-down.sh",
 		"db:push": "pnpm --filter @wtrn/db db:push",
 		"db:seed": "pnpm --filter @wtrn/db db:seed",
 		"db:studio": "pnpm --filter @wtrn/db db:studio",
