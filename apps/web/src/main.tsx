@@ -11,6 +11,20 @@ import "@fontsource-variable/instrument-sans/wght.css"
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
 
+function syncSystemColorScheme() {
+	const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+
+	function applyColorScheme() {
+		document.documentElement.classList.toggle("dark", mediaQuery.matches)
+		document.documentElement.style.colorScheme = mediaQuery.matches ? "dark" : "light"
+	}
+
+	applyColorScheme()
+	mediaQuery.addEventListener("change", applyColorScheme)
+}
+
+syncSystemColorScheme()
+
 // Create a new router instance
 const router = createRouter({ routeTree })
 const queryClient = new QueryClient()

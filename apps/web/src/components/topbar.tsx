@@ -18,16 +18,24 @@ export const Topbar = () => {
 	})
 
 	useHotkey("Escape", () => {
-		// blur the search input when escape is pressed
-		const input = document.getElementById("search-input") as HTMLInputElement
+		// unselect whichever element is currently focused when the escape key is pressed
+		if (document.activeElement instanceof HTMLElement) {
+			document.activeElement.blur()
+		}
 
-		if (input === document.activeElement) {
-			input.blur()
+		// reset tab index to the first element of the page
+		const firstElement = document.querySelector(
+			"body *:not(script):not(style):not(link):not(meta):not(title):not(head):not(html)",
+		) as HTMLElement
+
+		if (firstElement) {
+			firstElement.tabIndex = 0
+			firstElement.focus()
 		}
 	})
 
 	return (
-		<header className="flex h-16 items-center gap-4 border-b bg-white px-5">
+		<header className="flex h-16 items-center gap-4 border-b bg-white px-5 dark:bg-card">
 			<div className="relative flex-1">
 				<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
@@ -49,7 +57,7 @@ export const Topbar = () => {
 			<div className="ml-auto flex items-center gap-4">
 				<button
 					type="button"
-					className="relative rounded-full p-2 text-muted-foreground hover:bg-muted"
+					className="relative rounded-full p-2 text-muted-foreground hover:bg-muted dark:hover:bg-muted/70"
 				>
 					<Bell className="size-5" />
 					<span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">

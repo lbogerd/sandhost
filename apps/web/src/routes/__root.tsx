@@ -19,7 +19,7 @@ const RootLayout = () => {
 	return (
 		<>
 			{showAppShell ? (
-				<div className="min-h-screen bg-slate-50 text-slate-950">
+				<div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-background dark:text-foreground">
 					<div className="flex min-h-screen">
 						<Sidebar navItems={navItems} />
 						<div className="flex min-w-0 flex-1 flex-col">

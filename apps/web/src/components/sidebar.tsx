@@ -20,7 +20,7 @@ export function Sidebar({ navItems }: SidebarProps) {
 	return (
 		<aside
 			className={cn(
-				"flex shrink-0 flex-col border-r bg-white transition-[width] duration-200",
+				"flex shrink-0 flex-col border-r bg-white transition-[width] duration-200 dark:bg-card",
 				isMinimized ? "w-20" : "w-64",
 			)}
 		>
@@ -30,7 +30,7 @@ export function Sidebar({ navItems }: SidebarProps) {
 					isMinimized && "justify-center px-0",
 				)}
 			>
-				<div className="flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 ring-1 ring-blue-100">
+				<div className="flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 ring-1 ring-blue-100 dark:text-blue-300 dark:ring-blue-900/60">
 					<Box className="h-5 w-5" />
 				</div>
 				{!isMinimized && (
@@ -48,9 +48,9 @@ export function Sidebar({ navItems }: SidebarProps) {
 							aria-label={isMinimized ? item.label : undefined}
 							title={isMinimized ? item.label : undefined}
 							className={cn(
-								"flex h-10 w-full items-center rounded-lg text-sm font-medium text-slate-600 transition-colors",
-								"hover:bg-slate-100 hover:text-slate-950",
-								"[&.active]:bg-blue-50 [&.active]:text-blue-700 [&.active]:hover:bg-blue-50",
+								"flex h-10 w-full items-center rounded-lg text-sm font-medium text-slate-600 transition-colors dark:text-muted-foreground",
+								"hover:bg-slate-100 hover:text-slate-950 dark:hover:bg-muted dark:hover:text-foreground",
+								"[&.active]:bg-blue-50 [&.active]:text-blue-700 [&.active]:hover:bg-blue-50 dark:[&.active]:bg-blue-950/40 dark:[&.active]:text-blue-300 dark:[&.active]:hover:bg-blue-950/40",
 								isMinimized ? "justify-center px-0" : "gap-3 px-3",
 							)}
 						>

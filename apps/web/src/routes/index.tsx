@@ -238,11 +238,11 @@ const dotClassByStatus: Record<Status, string> = {
 }
 
 const toneClasses = {
-	blue: "bg-blue-50 text-blue-600 ring-blue-100",
-	green: "bg-emerald-50 text-emerald-600 ring-emerald-100",
-	gray: "bg-slate-100 text-slate-600 ring-slate-200",
-	red: "bg-red-50 text-red-600 ring-red-100",
-	amber: "bg-amber-50 text-amber-600 ring-amber-100",
+	blue: "bg-blue-50 text-blue-600 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60",
+	green: "bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
+	gray: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
+	red: "bg-red-50 text-red-600 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60",
+	amber: "bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
 } as const
 
 export const Route = createFileRoute("/")({
@@ -261,7 +261,7 @@ function StatusDot({ status }: { status: Status }) {
 
 function UsageBar({ value, status }: { value: number; status?: Status }) {
 	return (
-		<div className="mt-1 h-1.5 w-16 rounded-full bg-slate-100">
+		<div className="mt-1 h-1.5 w-16 rounded-full bg-slate-100 dark:bg-muted">
 			<div
 				className={cn(
 					"h-1.5 rounded-full",
@@ -270,7 +270,7 @@ function UsageBar({ value, status }: { value: number; status?: Status }) {
 						: value >= 60
 							? "bg-amber-500"
 							: status === "stopped" || status === "error"
-								? "bg-slate-300"
+								? "bg-slate-300 dark:bg-slate-600"
 								: "bg-emerald-500",
 				)}
 				style={{ width: `${Math.min(value, 100)}%` }}
@@ -298,7 +298,7 @@ function OverviewTable() {
 						<col className="w-[6%]" />
 					</colgroup>
 					<TableHeader>
-						<TableRow className="bg-slate-50/80">
+						<TableRow className="bg-slate-50/80 dark:bg-muted/40">
 							<TableHead className="pl-5">Name</TableHead>
 							<TableHead>Type</TableHead>
 							<TableHead>Details</TableHead>
@@ -315,7 +315,7 @@ function OverviewTable() {
 								key={row.id}
 								className={cn(
 									"h-14",
-									row.child && "bg-slate-50/35",
+									row.child && "bg-slate-50/35 dark:bg-muted/20",
 									row.type === "Machine" && "font-medium",
 								)}
 							>
@@ -324,30 +324,30 @@ function OverviewTable() {
 										<StatusDot status={row.status} />
 										{row.type === "Machine" ? (
 											row.expanded ? (
-												<ChevronDown className="h-4 w-4 text-slate-500" />
+												<ChevronDown className="h-4 w-4 text-slate-500 dark:text-muted-foreground" />
 											) : (
-												<ChevronRight className="h-4 w-4 text-slate-500" />
+												<ChevronRight className="h-4 w-4 text-slate-500 dark:text-muted-foreground" />
 											)
 										) : (
-											<CornerDownRight className="h-4 w-4 text-slate-300" />
+											<CornerDownRight className="h-4 w-4 text-slate-300 dark:text-muted-foreground/60" />
 										)}
-										<span className={cn(row.child && "font-normal text-slate-700")}>
+										<span className={cn(row.child && "font-normal text-slate-700 dark:text-foreground/80")}>
 											{row.name}
 										</span>
 									</div>
 								</TableCell>
-								<TableCell className="text-xs text-slate-500">{row.type}</TableCell>
-								<TableCell className="text-xs text-slate-600">{row.details}</TableCell>
-								<TableCell className="text-sm text-slate-700">{row.usageOrPort}</TableCell>
+								<TableCell className="text-xs text-slate-500 dark:text-muted-foreground">{row.type}</TableCell>
+								<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">{row.details}</TableCell>
+								<TableCell className="text-sm text-slate-700 dark:text-foreground/80">{row.usageOrPort}</TableCell>
 								<TableCell>
-									<div className="text-xs text-slate-700">{row.cpu}%</div>
+									<div className="text-xs text-slate-700 dark:text-foreground/80">{row.cpu}%</div>
 									<UsageBar value={row.cpu} status={row.status} />
 								</TableCell>
 								<TableCell>
-									<div className="text-xs text-slate-700">{row.memoryLabel}</div>
+									<div className="text-xs text-slate-700 dark:text-foreground/80">{row.memoryLabel}</div>
 									<UsageBar value={row.memoryPercent} status={row.status} />
 								</TableCell>
-								<TableCell className="text-xs text-slate-600">
+								<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">
 									{row.regionIp.map((line) => (
 										<div key={line}>{line}</div>
 									))}
@@ -373,7 +373,7 @@ function OverviewTable() {
 						))}
 					</TableBody>
 				</Table>
-				<div className="flex items-center justify-between border-t px-5 py-4 text-sm text-slate-500">
+				<div className="flex items-center justify-between border-t px-5 py-4 text-sm text-slate-500 dark:text-muted-foreground">
 					<span>Showing 1 to 4 of 12 machines</span>
 					<div className="flex items-center gap-2">
 						<Button variant="outline" size="icon" className="h-8 w-8">
@@ -425,10 +425,10 @@ function RightRail() {
 									<Icon className="h-3.5 w-3.5" children={undefined} />
 								</div>
 								<div>
-									<p className="font-medium leading-5 text-slate-800">{item.title}</p>
-									{item.detail && <p className="leading-5 text-slate-600">{item.detail}</p>}
+									<p className="font-medium leading-5 text-slate-800 dark:text-foreground">{item.title}</p>
+									{item.detail && <p className="leading-5 text-slate-600 dark:text-muted-foreground">{item.detail}</p>}
 								</div>
-								<span className="text-xs text-slate-500">{item.time}</span>
+								<span className="text-xs text-slate-500 dark:text-muted-foreground">{item.time}</span>
 							</div>
 						)
 					})}
@@ -457,10 +457,10 @@ function RightRail() {
 								<AlertTriangle className="h-3.5 w-3.5" />
 							</div>
 							<div>
-								<p className="font-medium leading-5 text-slate-800">{item.title}</p>
-								<p className="leading-5 text-slate-600">{item.detail}</p>
+								<p className="font-medium leading-5 text-slate-800 dark:text-foreground">{item.title}</p>
+								<p className="leading-5 text-slate-600 dark:text-muted-foreground">{item.detail}</p>
 							</div>
-							<span className="text-xs text-slate-500">{item.time}</span>
+							<span className="text-xs text-slate-500 dark:text-muted-foreground">{item.time}</span>
 						</div>
 					))}
 				</CardContent>
