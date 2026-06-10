@@ -42,6 +42,12 @@ export function buildSandboxSecret(input: {
 export function buildSandboxPod(input: {
 	command?: string[]
 	image: string
+	resources?: {
+		cpuLimit?: string
+		cpuRequest?: string
+		memoryLimit?: string
+		memoryRequest?: string
+	} | null
 	sandboxId: string
 }): V1Pod {
 	const podName = podNameForSandbox(input.sandboxId)
@@ -63,12 +69,12 @@ export function buildSandboxPod(input: {
 					name: SANDBOX_CONTAINER_NAME,
 					resources: {
 						limits: {
-							cpu: env.SANDBOX_CPU_LIMIT,
-							memory: env.SANDBOX_MEMORY_LIMIT,
+							cpu: input.resources?.cpuLimit ?? env.SANDBOX_CPU_LIMIT,
+							memory: input.resources?.memoryLimit ?? env.SANDBOX_MEMORY_LIMIT,
 						},
 						requests: {
-							cpu: env.SANDBOX_CPU_REQUEST,
-							memory: env.SANDBOX_MEMORY_REQUEST,
+							cpu: input.resources?.cpuRequest ?? env.SANDBOX_CPU_REQUEST,
+							memory: input.resources?.memoryRequest ?? env.SANDBOX_MEMORY_REQUEST,
 						},
 					},
 					securityContext: {

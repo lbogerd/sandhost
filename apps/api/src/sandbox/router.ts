@@ -25,6 +25,10 @@ export const sandboxRouter = {
 		const id = randomUUID()
 		const image = input.image ?? env.SANDBOX_DEFAULT_IMAGE
 		const command = input.command
+		// Only persist resources when the user actually overrode something, so
+		// the env defaults keep applying to rows with no stored overrides.
+		const resources =
+			input.resources && Object.values(input.resources).some(Boolean) ? input.resources : null
 
 		// Insert before creating the pod so a crash can never leave a pod
 		// that no row accounts for; the reconciler cleans up the inverse.
@@ -39,6 +43,7 @@ export const sandboxRouter = {
 				name: input.name ?? null,
 				namespace: env.SANDBOX_NAMESPACE,
 				podName: podNameForSandbox(id),
+				resources,
 				status: "starting",
 			})
 			.returning()
@@ -52,7 +57,7 @@ export const sandboxRouter = {
 
 		try {
 			await createSandboxSecret(buildSandboxSecret({ env: input.env, sandboxId: id }))
-			await createSandboxPod(buildSandboxPod({ command, image, sandboxId: id }))
+			await createSandboxPod(buildSandboxPod({ command, image, resources, sandboxId: id }))
 		} catch (error) {
 			await deleteSandboxSecret(podNameForSandbox(id)).catch(() => {})
 
@@ -181,6 +186,7 @@ function serializeSandbox(row: SandboxRow) {
 		name: row.name,
 		namespace: row.namespace,
 		podName: row.podName,
+		resources: row.resources ?? null,
 		startedAt: row.startedAt?.toISOString() ?? null,
 		status: sandboxStatusSchema.parse(row.status),
 		statusReason: row.statusReason,

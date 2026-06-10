@@ -160,6 +160,12 @@ export const sandbox = pgTable(
 		image: text("image").notNull(),
 		command: jsonb("command").$type<string[]>(),
 		env: jsonb("env").$type<Record<string, string>>().notNull().default({}),
+		resources: jsonb("resources").$type<{
+			cpuLimit?: string
+			cpuRequest?: string
+			memoryLimit?: string
+			memoryRequest?: string
+		}>(),
 		namespace: text("namespace").notNull(),
 		podName: text("pod_name").notNull().unique(),
 		status: text("status").notNull().default("starting"),

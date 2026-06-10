@@ -18,6 +18,20 @@ const authStatusContract = oc.output(
 
 export const sandboxStatusSchema = z.enum(["starting", "running", "stopping", "stopped", "failed"])
 
+// Kubernetes resource quantity, e.g. "250m", "0.5", "256Mi", "1Gi".
+const resourceQuantitySchema = z
+	.string()
+	.regex(/^\d+(\.\d+)?(m|k|Ki|Mi|Gi|Ti|Pi|Ei|M|G|T|P|E)?$/, "Invalid resource quantity")
+
+export const sandboxResourcesSchema = z.object({
+	cpuLimit: resourceQuantitySchema.optional(),
+	cpuRequest: resourceQuantitySchema.optional(),
+	memoryLimit: resourceQuantitySchema.optional(),
+	memoryRequest: resourceQuantitySchema.optional(),
+})
+
+export type SandboxResources = z.infer<typeof sandboxResourcesSchema>
+
 export const sandboxSchema = z.object({
 	createdAt: z.iso.datetime(),
 	env: z.record(z.string(), z.string()),
@@ -27,6 +41,7 @@ export const sandboxSchema = z.object({
 	name: z.string().nullable(),
 	namespace: z.string(),
 	podName: z.string(),
+	resources: sandboxResourcesSchema.nullable(),
 	startedAt: z.iso.datetime().nullable(),
 	status: sandboxStatusSchema,
 	statusReason: z.string().nullable(),
@@ -46,6 +61,7 @@ const createSandboxContract = oc
 			env: z.record(envKeySchema, z.string()).default({}),
 			image: z.string().min(1).optional(),
 			name: z.string().min(1).max(63).optional(),
+			resources: sandboxResourcesSchema.optional(),
 		}),
 	)
 	.output(sandboxSchema)

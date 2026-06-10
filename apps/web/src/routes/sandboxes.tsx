@@ -79,6 +79,10 @@ function CreateSandboxCard() {
 	const [name, setName] = useState("")
 	const [image, setImage] = useState("")
 	const [envText, setEnvText] = useState("")
+	const [cpuRequest, setCpuRequest] = useState("")
+	const [cpuLimit, setCpuLimit] = useState("")
+	const [memoryRequest, setMemoryRequest] = useState("")
+	const [memoryLimit, setMemoryLimit] = useState("")
 
 	const createMutation = useMutation(
 		orpc.sandbox.create.mutationOptions({
@@ -86,6 +90,10 @@ function CreateSandboxCard() {
 				setName("")
 				setImage("")
 				setEnvText("")
+				setCpuRequest("")
+				setCpuLimit("")
+				setMemoryRequest("")
+				setMemoryLimit("")
 				void queryClient.invalidateQueries({ queryKey: orpc.sandbox.key() })
 			},
 		}),
@@ -97,6 +105,12 @@ function CreateSandboxCard() {
 			env: parseEnvLines(envText),
 			image: image.trim() || undefined,
 			name: name.trim() || undefined,
+			resources: {
+				cpuLimit: cpuLimit.trim() || undefined,
+				cpuRequest: cpuRequest.trim() || undefined,
+				memoryLimit: memoryLimit.trim() || undefined,
+				memoryRequest: memoryRequest.trim() || undefined,
+			},
 		})
 	}
 
@@ -128,6 +142,44 @@ function CreateSandboxCard() {
 									value={image}
 									onChange={(event) => setImage(event.target.value)}
 									placeholder="sandhost-agent:dev"
+								/>
+							</Field>
+						</div>
+						<div className="grid gap-4 md:grid-cols-4">
+							<Field>
+								<FieldLabel htmlFor="sandbox-cpu-request">CPU request</FieldLabel>
+								<Input
+									id="sandbox-cpu-request"
+									value={cpuRequest}
+									onChange={(event) => setCpuRequest(event.target.value)}
+									placeholder="50m"
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="sandbox-cpu-limit">CPU limit</FieldLabel>
+								<Input
+									id="sandbox-cpu-limit"
+									value={cpuLimit}
+									onChange={(event) => setCpuLimit(event.target.value)}
+									placeholder="250m"
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="sandbox-memory-request">Memory request</FieldLabel>
+								<Input
+									id="sandbox-memory-request"
+									value={memoryRequest}
+									onChange={(event) => setMemoryRequest(event.target.value)}
+									placeholder="64Mi"
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="sandbox-memory-limit">Memory limit</FieldLabel>
+								<Input
+									id="sandbox-memory-limit"
+									value={memoryLimit}
+									onChange={(event) => setMemoryLimit(event.target.value)}
+									placeholder="256Mi"
 								/>
 							</Field>
 						</div>
