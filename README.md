@@ -19,28 +19,42 @@ still under heavy development.
 ## How sandboxes work
 
 A sandbox is a single pod in the configured namespace (default `sandhost`),
-created from a configurable image with optional env vars and command. Pods run
-with a hardened security context (non-root, no privilege escalation, no
-service account token) and `restartPolicy: Never`. A reconciler loop in the
-API polls pod state and keeps the `sandbox` table up to date; orphaned pods
-are cleaned up automatically.
+created from a configurable image with optional env vars and command. Env vars
+are delivered through a per-sandbox Kubernetes Secret (`envFrom`), never the
+pod spec. Pods run with a hardened security context (non-root, no privilege
+escalation, no service account token) and `restartPolicy: Never`. A reconciler
+loop in the API polls pod state and keeps the `sandbox` table up to date;
+orphaned pods and secrets are cleaned up automatically.
 
-Note: images must support running as a non-root user (the default
-`busybox:1.37` placeholder does).
+The default image is `sandhost-agent:dev`, built from `images/agent/` and
+loaded into the kind cluster by `pnpm k8s:up`. It logs heartbeats and exits
+promptly on SIGTERM. The API also exposes `sandbox.logs` (tail pod logs) and
+`sandbox.exec` (run a one-shot command in the pod), both surfaced on the web
+Sandboxes page. Custom images must support running as a non-root user.
 
 ## Local Development
 
 Prerequisites: Docker, [kubectl](https://kubernetes.io/docs/tasks/tools/), and
-[kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation).
+[kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) (v0.32+).
 
 ```sh
 pnpm install
 pnpm pg:up    # postgres via docker compose
 pnpm db:push  # drizzle schema push
-pnpm k8s:up   # kind cluster + sandhost namespace
+pnpm k8s:up   # kind cluster + sandhost namespace + agent image
 pnpm dev
 ```
 
 Copy each app's `.env.example` to `.env` as needed. The API reads the
 kubeconfig context from `KUBE_CONTEXT` (use `kind-sandhost` for local dev).
 `pnpm k8s:down` deletes the kind cluster.
+
+## End-to-end test
+
+With postgres, the schema, and the kind cluster in place (the three setup
+commands above), run the full-workflow test — it boots its own API instance
+and drives create → running → logs → exec → stop against the real cluster:
+
+```sh
+pnpm --filter @wtrn/api test
+```

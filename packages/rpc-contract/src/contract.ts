@@ -62,14 +62,45 @@ const listSandboxesContract = oc.output(
 	}),
 )
 
+const sandboxLogsContract = oc
+	.input(
+		z.object({
+			id: z.string().min(1),
+			tailLines: z.number().int().min(1).max(1000).default(200),
+		}),
+	)
+	.output(
+		z.object({
+			available: z.boolean(),
+			logs: z.string(),
+		}),
+	)
+
+const sandboxExecContract = oc
+	.input(
+		z.object({
+			command: z.array(z.string().min(1)).min(1),
+			id: z.string().min(1),
+		}),
+	)
+	.output(
+		z.object({
+			exitCode: z.number().nullable(),
+			stderr: z.string(),
+			stdout: z.string(),
+		}),
+	)
+
 export const routerContract = oc.router({
 	authStatus: authStatusContract,
 	hello: helloWorldContract,
 	sandbox: oc.router({
 		create: createSandboxContract,
+		exec: sandboxExecContract,
 		get: getSandboxContract,
 		kill: killSandboxContract,
 		list: listSandboxesContract,
+		logs: sandboxLogsContract,
 		stop: stopSandboxContract,
 	}),
 })

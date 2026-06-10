@@ -5,22 +5,26 @@ import { and, desc, eq, sandbox } from "@wtrn/db-schema"
 import { sandboxStatusSchema } from "@wtrn/rpc-contract"
 import { env } from "../env.ts"
 import { secured } from "../rpc.ts"
-import { createSandboxPod, deleteSandboxPod } from "./driver.ts"
+import {
+	createSandboxPod,
+	createSandboxSecret,
+	deleteSandboxPod,
+	deleteSandboxSecret,
+	readSandboxPodLogs,
+} from "./driver.ts"
+import { execInSandboxPod } from "./exec.ts"
 import { getKubernetesErrorMessage } from "./k8s.ts"
-import { buildSandboxPod, podNameForSandbox } from "./pod-spec.ts"
+import { buildSandboxPod, buildSandboxSecret, podNameForSandbox } from "./pod-spec.ts"
 
 type SandboxRow = typeof sandbox.$inferSelect
 
 const TERMINAL_STATUSES = new Set(["stopped", "failed"])
 
-// busybox sleep does not support "infinity"; max int32 seconds ~= 68 years.
-const DEFAULT_IMAGE_COMMAND = ["sleep", "2147483647"]
-
 export const sandboxRouter = {
 	create: secured.sandbox.create.handler(async ({ context, input }) => {
 		const id = randomUUID()
 		const image = input.image ?? env.SANDBOX_DEFAULT_IMAGE
-		const command = input.command ?? (input.image ? undefined : DEFAULT_IMAGE_COMMAND)
+		const command = input.command
 
 		// Insert before creating the pod so a crash can never leave a pod
 		// that no row accounts for; the reconciler cleans up the inverse.
@@ -47,8 +51,11 @@ export const sandboxRouter = {
 		}
 
 		try {
-			await createSandboxPod(buildSandboxPod({ command, env: input.env, image, sandboxId: id }))
+			await createSandboxSecret(buildSandboxSecret({ env: input.env, sandboxId: id }))
+			await createSandboxPod(buildSandboxPod({ command, image, sandboxId: id }))
 		} catch (error) {
+			await deleteSandboxSecret(podNameForSandbox(id)).catch(() => {})
+
 			const failedSandboxes = await db
 				.update(sandbox)
 				.set({
@@ -64,6 +71,23 @@ export const sandboxRouter = {
 
 		return serializeSandbox(insertedSandbox)
 	}),
+	exec: secured.sandbox.exec.handler(async ({ context, input }) => {
+		const currentSandbox = await findOwnedSandbox(input.id, context.authSession.user.id)
+
+		if (currentSandbox.status !== "running") {
+			throw new ORPCError("BAD_REQUEST", {
+				message: `Sandbox is ${currentSandbox.status}, not running`,
+			})
+		}
+
+		try {
+			return await execInSandboxPod(currentSandbox.podName, input.command)
+		} catch (error) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: getKubernetesErrorMessage(error),
+			})
+		}
+	}),
 	get: secured.sandbox.get.handler(async ({ context, input }) => {
 		const currentSandbox = await findOwnedSandbox(input.id, context.authSession.user.id)
 
@@ -77,6 +101,7 @@ export const sandboxRouter = {
 		}
 
 		await deleteSandboxPod(currentSandbox.podName, { force: true })
+		await deleteSandboxSecret(currentSandbox.podName)
 
 		const updatedSandboxes = await db
 			.update(sandbox)
@@ -89,6 +114,11 @@ export const sandboxRouter = {
 			.returning()
 
 		return serializeSandbox(updatedSandboxes[0] ?? currentSandbox)
+	}),
+	logs: secured.sandbox.logs.handler(async ({ context, input }) => {
+		const currentSandbox = await findOwnedSandbox(input.id, context.authSession.user.id)
+
+		return readSandboxPodLogs(currentSandbox.podName, input.tailLines)
 	}),
 	list: secured.sandbox.list.handler(async ({ context }) => {
 		const sandboxes = await db
@@ -106,7 +136,10 @@ export const sandboxRouter = {
 			return serializeSandbox(currentSandbox)
 		}
 
+		// envFrom is resolved at container start, so the secret can go now
+		// even while the pod terminates gracefully.
 		await deleteSandboxPod(currentSandbox.podName, { force: false })
+		await deleteSandboxSecret(currentSandbox.podName)
 
 		const updatedSandboxes = await db
 			.update(sandbox)

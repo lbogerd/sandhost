@@ -4,7 +4,8 @@
 	"scripts": {
 		"dev": "tsx watch src/app.ts",
 		"build": "tsc",
-		"start": "node dist/app.js"
+		"start": "node dist/app.js",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@hono/node-server": "catalog:",
@@ -21,7 +22,9 @@
 	},
 	"devDependencies": {
 		"@types/node": "catalog:",
+		"@wtrn/api-client": "workspace:*",
 		"tsx": "catalog:",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"vitest": "catalog:"
 	}
 }

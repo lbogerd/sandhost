@@ -16,7 +16,7 @@ export const env = createEnv({
 			.default(4000),
 		SANDBOX_CPU_LIMIT: z.string().min(1).default("250m"),
 		SANDBOX_CPU_REQUEST: z.string().min(1).default("50m"),
-		SANDBOX_DEFAULT_IMAGE: z.string().min(1).default("busybox:1.37"),
+		SANDBOX_DEFAULT_IMAGE: z.string().min(1).default("sandhost-agent:dev"),
 		SANDBOX_MEMORY_LIMIT: z.string().min(1).default("256Mi"),
 		SANDBOX_MEMORY_REQUEST: z.string().min(1).default("64Mi"),
 		SANDBOX_NAMESPACE: z.string().min(1).default("sandhost"),

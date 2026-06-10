@@ -92,3 +92,31 @@ Cookie: {{login.response.headers.set-cookie}}
 		"id": "{{createSandbox.response.body.json.id}}"
 	}
 }
+
+###
+# @name sandboxLogs
+
+POST {{host}}/sandbox/logs
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {
+		"id": "{{createSandbox.response.body.json.id}}",
+		"tailLines": 50
+	}
+}
+
+###
+# @name sandboxExec
+
+POST {{host}}/sandbox/exec
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+	"json": {
+		"id": "{{createSandbox.response.body.json.id}}",
+		"command": ["sh", "-c", "env | sort"]
+	}
+}

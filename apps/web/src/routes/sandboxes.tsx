@@ -13,7 +13,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@wtrn/components/table"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { cn } from "tailwind-variants"
 import { orpc } from "../api.ts"
 
@@ -127,7 +127,7 @@ function CreateSandboxCard() {
 									id="sandbox-image"
 									value={image}
 									onChange={(event) => setImage(event.target.value)}
-									placeholder="busybox:1.37"
+									placeholder="sandhost-agent:dev"
 								/>
 							</Field>
 						</div>
@@ -161,8 +161,85 @@ function CreateSandboxCard() {
 	)
 }
 
+function SandboxDetailPanel({ sandbox }: { sandbox: Sandbox }) {
+	const [command, setCommand] = useState("")
+
+	const logsQuery = useQuery(
+		orpc.sandbox.logs.queryOptions({
+			input: { id: sandbox.id },
+			refetchInterval: 2000,
+			retry: false,
+		}),
+	)
+	const execMutation = useMutation(orpc.sandbox.exec.mutationOptions())
+
+	function runCommand(event: { preventDefault: () => void }) {
+		event.preventDefault()
+		const trimmed = command.trim()
+		if (!trimmed) return
+
+		execMutation.mutate({ command: ["sh", "-c", trimmed], id: sandbox.id })
+	}
+
+	const logs = logsQuery.data?.available
+		? logsQuery.data.logs || "(no output yet)"
+		: "(pod no longer exists — logs unavailable)"
+
+	return (
+		<div className="space-y-4 bg-slate-50/60 px-5 py-4 dark:bg-muted/20">
+			<div>
+				<p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-muted-foreground">
+					Logs (live)
+				</p>
+				<pre className="max-h-64 overflow-auto rounded-lg border border-input bg-white p-3 font-mono text-xs whitespace-pre-wrap text-slate-800 dark:bg-background dark:text-foreground/90">
+					{logsQuery.isLoading ? "Loading logs..." : logs}
+				</pre>
+			</div>
+			<div>
+				<p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-muted-foreground">
+					Run command (via sh -c)
+				</p>
+				<form onSubmit={runCommand} className="flex items-center gap-2">
+					<Input
+						value={command}
+						onChange={(event) => setCommand(event.target.value)}
+						placeholder="ps aux"
+						className="font-mono text-sm"
+						disabled={sandbox.status !== "running"}
+					/>
+					<Button
+						type="submit"
+						size="sm"
+						className="h-8 px-3 text-xs"
+						disabled={sandbox.status !== "running" || execMutation.isPending}
+					>
+						{execMutation.isPending ? "Running..." : "Run"}
+					</Button>
+				</form>
+				{execMutation.isError && (
+					<p className="mt-2 text-xs text-red-600 dark:text-red-400">
+						{execMutation.error.message}
+					</p>
+				)}
+				{execMutation.data && (
+					<pre className="mt-2 max-h-40 overflow-auto rounded-lg border border-input bg-white p-3 font-mono text-xs whitespace-pre-wrap text-slate-800 dark:bg-background dark:text-foreground/90">
+						{[
+							execMutation.data.stdout,
+							execMutation.data.stderr && `stderr: ${execMutation.data.stderr}`,
+							`exit code: ${execMutation.data.exitCode ?? "unknown"}`,
+						]
+							.filter(Boolean)
+							.join("\n")}
+					</pre>
+				)}
+			</div>
+		</div>
+	)
+}
+
 function SandboxTable() {
 	const queryClient = useQueryClient()
+	const [expandedId, setExpandedId] = useState<string | null>(null)
 	const listQuery = useQuery(
 		orpc.sandbox.list.queryOptions({
 			refetchInterval: 3000,
@@ -202,47 +279,65 @@ function SandboxTable() {
 							{sandboxes.map((sandbox) => {
 								const isTerminal = sandbox.status === "stopped" || sandbox.status === "failed"
 								const canStop = sandbox.status === "starting" || sandbox.status === "running"
+								const isExpanded = expandedId === sandbox.id
 
 								return (
-									<TableRow key={sandbox.id} className="h-14">
-										<TableCell className="pl-5 font-medium">
-											{sandbox.name ?? sandbox.id.slice(0, 8)}
-										</TableCell>
-										<TableCell>
-											<StatusBadge sandbox={sandbox} />
-										</TableCell>
-										<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">
-											{sandbox.image}
-										</TableCell>
-										<TableCell className="font-mono text-xs text-slate-600 dark:text-muted-foreground">
-											{sandbox.podName}
-										</TableCell>
-										<TableCell className="text-sm text-slate-700 dark:text-foreground/80">
-											{formatAge(sandbox.createdAt)}
-										</TableCell>
-										<TableCell className="pr-5 text-right">
-											<div className="flex items-center justify-end gap-2">
-												<Button
-													variant="outline"
-													size="sm"
-													className="h-8 px-3 text-xs"
-													disabled={!canStop || stopMutation.isPending}
-													onClick={() => stopMutation.mutate({ id: sandbox.id })}
-												>
-													Stop
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													className="h-8 px-3 text-xs text-red-600 dark:text-red-400"
-													disabled={isTerminal || killMutation.isPending}
-													onClick={() => killMutation.mutate({ id: sandbox.id })}
-												>
-													Kill
-												</Button>
-											</div>
-										</TableCell>
-									</TableRow>
+									<React.Fragment key={sandbox.id}>
+										<TableRow className="h-14">
+											<TableCell className="pl-5 font-medium">
+												{sandbox.name ?? sandbox.id.slice(0, 8)}
+											</TableCell>
+											<TableCell>
+												<StatusBadge sandbox={sandbox} />
+											</TableCell>
+											<TableCell className="text-xs text-slate-600 dark:text-muted-foreground">
+												{sandbox.image}
+											</TableCell>
+											<TableCell className="font-mono text-xs text-slate-600 dark:text-muted-foreground">
+												{sandbox.podName}
+											</TableCell>
+											<TableCell className="text-sm text-slate-700 dark:text-foreground/80">
+												{formatAge(sandbox.createdAt)}
+											</TableCell>
+											<TableCell className="pr-5 text-right">
+												<div className="flex items-center justify-end gap-2">
+													<Button
+														variant={isExpanded ? "default" : "outline"}
+														size="sm"
+														className="h-8 px-3 text-xs"
+														onClick={() => setExpandedId(isExpanded ? null : sandbox.id)}
+													>
+														{isExpanded ? "Hide" : "Details"}
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														className="h-8 px-3 text-xs"
+														disabled={!canStop || stopMutation.isPending}
+														onClick={() => stopMutation.mutate({ id: sandbox.id })}
+													>
+														Stop
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														className="h-8 px-3 text-xs text-red-600 dark:text-red-400"
+														disabled={isTerminal || killMutation.isPending}
+														onClick={() => killMutation.mutate({ id: sandbox.id })}
+													>
+														Kill
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+										{isExpanded && (
+											<TableRow>
+												<TableCell colSpan={6} className="p-0">
+													<SandboxDetailPanel sandbox={sandbox} />
+												</TableCell>
+											</TableRow>
+										)}
+									</React.Fragment>
 								)
 							})}
 						</TableBody>

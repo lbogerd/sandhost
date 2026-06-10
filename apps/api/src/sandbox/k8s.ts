@@ -1,18 +1,25 @@
 import { ApiException, CoreV1Api, KubeConfig } from "@kubernetes/client-node"
 import { env } from "../env.ts"
 
+let kubeConfig: KubeConfig | null = null
 let coreApi: CoreV1Api | null = null
 
-export function getCoreApi(): CoreV1Api {
-	if (!coreApi) {
-		const kubeConfig = new KubeConfig()
+export function getKubeConfig(): KubeConfig {
+	if (!kubeConfig) {
+		kubeConfig = new KubeConfig()
 		kubeConfig.loadFromDefault()
 
 		if (env.KUBE_CONTEXT) {
 			kubeConfig.setCurrentContext(env.KUBE_CONTEXT)
 		}
+	}
 
-		coreApi = kubeConfig.makeApiClient(CoreV1Api)
+	return kubeConfig
+}
+
+export function getCoreApi(): CoreV1Api {
+	if (!coreApi) {
+		coreApi = getKubeConfig().makeApiClient(CoreV1Api)
 	}
 
 	return coreApi

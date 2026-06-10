@@ -2,7 +2,12 @@ import type { V1Pod } from "@kubernetes/client-node"
 import { db } from "@wtrn/db"
 import { and, eq, inArray, sandbox } from "@wtrn/db-schema"
 import { env } from "../env.ts"
-import { deleteSandboxPod, listSandboxPods } from "./driver.ts"
+import {
+	deleteSandboxPod,
+	deleteSandboxSecret,
+	listSandboxPods,
+	listSandboxSecrets,
+} from "./driver.ts"
 import { getKubernetesErrorMessage } from "./k8s.ts"
 import { SANDBOX_ID_LABEL } from "./pod-spec.ts"
 import { derivePodState } from "./state.ts"
@@ -63,6 +68,15 @@ async function reconcile() {
 		// terminal, or deleted out-of-band), so remove it from the cluster.
 		console.log(`sandbox reconciler: deleting orphan pod ${pod.metadata.name}`)
 		await deleteSandboxPod(pod.metadata.name, { force: true })
+	}
+
+	// Same net for per-sandbox env secrets left behind by crashes.
+	for (const secret of await listSandboxSecrets()) {
+		const sandboxId = secret.metadata?.labels?.[SANDBOX_ID_LABEL]
+		if (!secret.metadata?.name || (sandboxId && activeSandboxIds.has(sandboxId))) continue
+
+		console.log(`sandbox reconciler: deleting orphan secret ${secret.metadata.name}`)
+		await deleteSandboxSecret(secret.metadata.name)
 	}
 }
 

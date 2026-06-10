@@ -24,4 +24,8 @@ fi
 kubectl --context "${CONTEXT}" create namespace "${NAMESPACE}" \
 	--dry-run=client -o yaml | kubectl --context "${CONTEXT}" apply -f -
 
-echo "Cluster ready: context '${CONTEXT}', namespace '${NAMESPACE}'"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+docker build -t sandhost-agent:dev "${REPO_ROOT}/images/agent"
+kind load docker-image sandhost-agent:dev --name "${CLUSTER_NAME}"
+
+echo "Cluster ready: context '${CONTEXT}', namespace '${NAMESPACE}', agent image 'sandhost-agent:dev' loaded"
