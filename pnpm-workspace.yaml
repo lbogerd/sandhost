@@ -44,5 +44,6 @@ catalog:
   "@base-ui/react": 1.5.0
   "@fontsource-variable/instrument-sans": 5.2.8
   "@tanstack/react-hotkeys": ^0.10.0
+  recharts: ^3.8.1
 
 catalogMode: prefer

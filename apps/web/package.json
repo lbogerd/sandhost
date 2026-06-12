@@ -24,6 +24,7 @@
 		"lucide-react": "catalog:",
 		"react": "catalog:",
 		"react-dom": "19.2.7",
+		"recharts": "catalog:",
 		"shadcn": "catalog:",
 		"tailwind-merge": "catalog:",
 		"tailwind-variants": "catalog:",
