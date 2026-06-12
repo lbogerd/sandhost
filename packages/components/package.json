@@ -19,6 +19,7 @@
 		"tailwind-merge": "catalog:",
 		"tailwind-variants": "catalog:",
 		"tailwindcss": "catalog:",
-		"tw-animate-css": "catalog:"
+		"tw-animate-css": "catalog:",
+		"zod": "catalog:"
 	}
 }

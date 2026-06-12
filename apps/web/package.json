@@ -27,7 +27,8 @@
 		"shadcn": "catalog:",
 		"tailwind-merge": "catalog:",
 		"tailwind-variants": "catalog:",
-		"tw-animate-css": "catalog:"
+		"tw-animate-css": "catalog:",
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@babel/core": "7.29.0",

@@ -5,9 +5,9 @@
 	"author": "wtrn.dev",
 	"type": "module",
 	"scripts": {
-		"dev": "turbo dev",
-		"dev:api": "turbo dev --filter=@wtrn/api",
-		"dev:web": "turbo dev --filter=@wtrn/web",
+		"dev": "node scripts/dev.mjs",
+		"dev:api": "node scripts/dev.mjs --filter=@wtrn/api",
+		"dev:web": "node scripts/dev.mjs --filter=@wtrn/web",
 		"dev:kill": "fuser -k 3000/tcp 4000/tcp || true",
 		"check": "oxlint --fix && oxfmt",
 		"k8s:up": "bash scripts/k8s-up.sh",

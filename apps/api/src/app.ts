@@ -101,7 +101,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 	return auth.handler(c.req.raw)
 })
 
-serve(
+const server = serve(
 	{
 		fetch: app.fetch,
 		port: env.PORT,
@@ -111,4 +111,33 @@ serve(
 	},
 )
 
-startSandboxReconciler()
+const stopSandboxReconciler = startSandboxReconciler()
+
+let isShuttingDown = false
+
+function shutdown(signal: NodeJS.Signals) {
+	if (isShuttingDown) return
+	isShuttingDown = true
+
+	stopSandboxReconciler()
+
+	const forceExitTimer = setTimeout(() => {
+		console.error(`Received ${signal}, but the server did not close in time`)
+		process.exit(1)
+	}, 5_000)
+	forceExitTimer.unref()
+
+	server.close((error) => {
+		clearTimeout(forceExitTimer)
+
+		if (error) {
+			console.error(error)
+			process.exit(1)
+		}
+
+		process.exit(0)
+	})
+}
+
+process.once("SIGINT", shutdown)
+process.once("SIGTERM", shutdown)

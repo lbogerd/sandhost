@@ -1,9 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import type { Sandbox, SandboxStatus } from "@wtrn/rpc-contract"
 import { Button } from "@wtrn/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@wtrn/components/card"
-import { Field, FieldGroup, FieldLabel } from "@wtrn/components/field"
+import {
+	Form,
+	FormControl,
+	FormErrorList,
+	FormField,
+	FormLabel,
+	FormMessage,
+	FormSubmit,
+} from "@wtrn/components/form"
+import { FieldGroup } from "@wtrn/components/field"
 import { Input } from "@wtrn/components/input"
 import {
 	Table,
@@ -13,8 +21,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@wtrn/components/table"
+import { Textarea } from "@wtrn/components/textarea"
+import type { Sandbox, SandboxStatus } from "@wtrn/rpc-contract"
 import React, { useEffect, useState } from "react"
 import { cn } from "tailwind-variants"
+import * as z from "zod"
 import { orpc } from "../api.ts"
 import { formatAge } from "../logic/formatAge"
 
@@ -29,6 +40,21 @@ const dotClassByStatus: Record<SandboxStatus, string> = {
 	stopped: "bg-slate-400",
 	failed: "bg-red-500",
 }
+
+const resourceQuantitySchema = z.string().refine((value) => {
+	const trimmed = value.trim()
+	return !trimmed || /^\d+(\.\d+)?(m|k|Ki|Mi|Gi|Ti|Pi|Ei|M|G|T|P|E)?$/.test(trimmed)
+}, "Invalid resource quantity")
+
+const createSandboxFormSchema = z.object({
+	cpuLimit: resourceQuantitySchema,
+	cpuRequest: resourceQuantitySchema,
+	envText: z.string(),
+	image: z.string(),
+	memoryLimit: resourceQuantitySchema,
+	memoryRequest: resourceQuantitySchema,
+	name: z.string(),
+})
 
 function StatusBadge({ sandbox }: { sandbox: Sandbox }) {
 	return (
@@ -67,42 +93,29 @@ function parseEnvLines(value: string): Record<string, string> {
 
 function CreateSandboxCard() {
 	const queryClient = useQueryClient()
-	const [name, setName] = useState("")
-	const [image, setImage] = useState("")
-	const [envText, setEnvText] = useState("")
-	const [cpuRequest, setCpuRequest] = useState("")
-	const [cpuLimit, setCpuLimit] = useState("")
-	const [memoryRequest, setMemoryRequest] = useState("")
-	const [memoryLimit, setMemoryLimit] = useState("")
+	const [formKey, setFormKey] = useState(0)
 
 	const createMutation = useMutation(
 		orpc.sandbox.create.mutationOptions({
 			onSuccess: () => {
-				setName("")
-				setImage("")
-				setEnvText("")
-				setCpuRequest("")
-				setCpuLimit("")
-				setMemoryRequest("")
-				setMemoryLimit("")
 				void queryClient.invalidateQueries({ queryKey: orpc.sandbox.key() })
 			},
 		}),
 	)
 
-	function create(event: { preventDefault: () => void }) {
-		event.preventDefault()
-		createMutation.mutate({
-			env: parseEnvLines(envText),
-			image: image.trim() || undefined,
-			name: name.trim() || undefined,
+	async function create(values: z.output<typeof createSandboxFormSchema>) {
+		await createMutation.mutateAsync({
+			env: parseEnvLines(values.envText),
+			image: values.image.trim() || undefined,
+			name: values.name.trim() || undefined,
 			resources: {
-				cpuLimit: cpuLimit.trim() || undefined,
-				cpuRequest: cpuRequest.trim() || undefined,
-				memoryLimit: memoryLimit.trim() || undefined,
-				memoryRequest: memoryRequest.trim() || undefined,
+				cpuLimit: values.cpuLimit.trim() || undefined,
+				cpuRequest: values.cpuRequest.trim() || undefined,
+				memoryLimit: values.memoryLimit.trim() || undefined,
+				memoryRequest: values.memoryRequest.trim() || undefined,
 			},
 		})
+		setFormKey((key) => key + 1)
 	}
 
 	return (
@@ -114,91 +127,69 @@ function CreateSandboxCard() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form onSubmit={create}>
+				<Form key={formKey} schema={createSandboxFormSchema} onSubmit={create}>
 					<FieldGroup>
 						<div className="grid gap-4 md:grid-cols-2">
-							<Field>
-								<FieldLabel htmlFor="sandbox-name">Name (optional)</FieldLabel>
-								<Input
-									id="sandbox-name"
-									value={name}
-									onChange={(event) => setName(event.target.value)}
-									placeholder="my-agent"
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="sandbox-image">Image (optional)</FieldLabel>
-								<Input
-									id="sandbox-image"
-									value={image}
-									onChange={(event) => setImage(event.target.value)}
-									placeholder="sandhost-agent:dev"
-								/>
-							</Field>
+							<FormField name="name">
+								<FormLabel>Name (optional)</FormLabel>
+								<FormControl>
+									<Input placeholder="my-agent" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
+							<FormField name="image">
+								<FormLabel>Image (optional)</FormLabel>
+								<FormControl>
+									<Input placeholder="sandhost-agent:dev" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
 						</div>
 						<div className="grid gap-4 md:grid-cols-4">
-							<Field>
-								<FieldLabel htmlFor="sandbox-cpu-request">CPU request</FieldLabel>
-								<Input
-									id="sandbox-cpu-request"
-									value={cpuRequest}
-									onChange={(event) => setCpuRequest(event.target.value)}
-									placeholder="50m"
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="sandbox-cpu-limit">CPU limit</FieldLabel>
-								<Input
-									id="sandbox-cpu-limit"
-									value={cpuLimit}
-									onChange={(event) => setCpuLimit(event.target.value)}
-									placeholder="250m"
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="sandbox-memory-request">Memory request</FieldLabel>
-								<Input
-									id="sandbox-memory-request"
-									value={memoryRequest}
-									onChange={(event) => setMemoryRequest(event.target.value)}
-									placeholder="64Mi"
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="sandbox-memory-limit">Memory limit</FieldLabel>
-								<Input
-									id="sandbox-memory-limit"
-									value={memoryLimit}
-									onChange={(event) => setMemoryLimit(event.target.value)}
-									placeholder="256Mi"
-								/>
-							</Field>
+							<FormField name="cpuRequest">
+								<FormLabel>CPU request</FormLabel>
+								<FormControl>
+									<Input placeholder="50m" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
+							<FormField name="cpuLimit">
+								<FormLabel>CPU limit</FormLabel>
+								<FormControl>
+									<Input placeholder="250m" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
+							<FormField name="memoryRequest">
+								<FormLabel>Memory request</FormLabel>
+								<FormControl>
+									<Input placeholder="64Mi" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
+							<FormField name="memoryLimit">
+								<FormLabel>Memory limit</FormLabel>
+								<FormControl>
+									<Input placeholder="256Mi" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
 						</div>
-						<Field>
-							<FieldLabel htmlFor="sandbox-env">
-								Environment variables (KEY=VALUE per line)
-							</FieldLabel>
-							<textarea
-								id="sandbox-env"
-								value={envText}
-								onChange={(event) => setEnvText(event.target.value)}
-								rows={3}
-								placeholder={"AGENT_TOKEN=...\nLOG_LEVEL=debug"}
-								className="w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 font-mono text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-							/>
-						</Field>
-						{createMutation.isError && (
-							<p className="text-sm text-red-600 dark:text-red-400">
-								{createMutation.error.message}
-							</p>
-						)}
+						<FormField name="envText">
+							<FormLabel>Environment variables (KEY=VALUE per line)</FormLabel>
+							<FormControl>
+								<Textarea rows={3} placeholder={"AGENT_TOKEN=...\nLOG_LEVEL=debug"} />
+							</FormControl>
+							<FormMessage />
+						</FormField>
+						<FormErrorList />
 						<div>
-							<Button type="submit" disabled={createMutation.isPending}>
+							<FormSubmit disabled={createMutation.isPending}>
 								{createMutation.isPending ? "Creating..." : "Create Sandbox"}
-							</Button>
+							</FormSubmit>
 						</div>
 					</FieldGroup>
-				</form>
+				</Form>
 			</CardContent>
 		</Card>
 	)
