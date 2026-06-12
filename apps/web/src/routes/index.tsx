@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import type { Sandbox, SandboxConfig, SandboxStatus } from "@wtrn/rpc-contract"
 import { useEffect, useState } from "react"
 import { orpc } from "../api.ts"
@@ -49,6 +49,11 @@ import * as z from "zod"
 
 export const Route = createFileRoute("/")({
 	component: Index,
+	validateSearch: (search): { createSandbox?: boolean } => {
+		const createSandbox = search.createSandbox === true || search.createSandbox === "true"
+
+		return createSandbox ? { createSandbox } : {}
+	},
 })
 
 const dotClassByStatus: Record<SandboxStatus, string> = {
@@ -685,7 +690,7 @@ function RightRail({
 
 function Index() {
 	const navigate = useNavigate()
-	const [createDialogOpen, setCreateDialogOpen] = useState(false)
+	const createDialogOpen = useSearch({ from: "/", select: (search) => search.createSandbox })
 	const authStatusQuery = useQuery(
 		orpc.authStatus.queryOptions({
 			retry: false,
@@ -714,7 +719,10 @@ function Index() {
 
 	return (
 		<main className="flex min-w-0 flex-1 flex-col">
-			<CreateSandboxDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+			<CreateSandboxDialog
+				open={createDialogOpen ?? false}
+				onOpenChange={() => navigate({ to: "/" })}
+			/>
 			<div className="flex flex-1 gap-4 p-4">
 				<section className="min-w-0 flex-1 space-y-4">
 					<StatCards sandboxes={sandboxes} />
@@ -723,13 +731,12 @@ function Index() {
 							Failed to load sandboxes: {listQuery.error.message}
 						</p>
 					)}
-					<SandboxOverviewTable
-						sandboxes={sandboxes}
-						isLoading={listQuery.isLoading}
-						onCreateSandbox={() => setCreateDialogOpen(true)}
-					/>
+					<SandboxOverviewTable sandboxes={sandboxes} isLoading={listQuery.isLoading} />
 				</section>
-				<RightRail sandboxes={sandboxes} onCreateSandbox={() => setCreateDialogOpen(true)} />
+				<RightRail
+					sandboxes={sandboxes}
+					onCreateSandbox={() => navigate({ to: "/", search: { createSandbox: true } })}
+				/>
 			</div>
 		</main>
 	)
