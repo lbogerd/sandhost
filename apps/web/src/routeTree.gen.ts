@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SandboxesRouteImport } from './routes/sandboxes'
-import { Route as MachinesRouteImport } from './routes/machines'
 import { Route as LogsRouteImport } from './routes/logs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ActivityRouteImport } from './routes/activity'
@@ -26,11 +25,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const SandboxesRoute = SandboxesRouteImport.update({
   id: '/sandboxes',
   path: '/sandboxes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MachinesRoute = MachinesRouteImport.update({
-  id: '/machines',
-  path: '/machines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogsRoute = LogsRouteImport.update({
@@ -65,7 +59,6 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRoute
   '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
-  '/machines': typeof MachinesRoute
   '/sandboxes': typeof SandboxesRoute
   '/settings': typeof SettingsRoute
 }
@@ -75,7 +68,6 @@ export interface FileRoutesByTo {
   '/activity': typeof ActivityRoute
   '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
-  '/machines': typeof MachinesRoute
   '/sandboxes': typeof SandboxesRoute
   '/settings': typeof SettingsRoute
 }
@@ -86,7 +78,6 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRoute
   '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
-  '/machines': typeof MachinesRoute
   '/sandboxes': typeof SandboxesRoute
   '/settings': typeof SettingsRoute
 }
@@ -98,7 +89,6 @@ export interface FileRouteTypes {
     | '/activity'
     | '/login'
     | '/logs'
-    | '/machines'
     | '/sandboxes'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
@@ -108,7 +98,6 @@ export interface FileRouteTypes {
     | '/activity'
     | '/login'
     | '/logs'
-    | '/machines'
     | '/sandboxes'
     | '/settings'
   id:
@@ -118,7 +107,6 @@ export interface FileRouteTypes {
     | '/activity'
     | '/login'
     | '/logs'
-    | '/machines'
     | '/sandboxes'
     | '/settings'
   fileRoutesById: FileRoutesById
@@ -129,7 +117,6 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRoute
   LoginRoute: typeof LoginRoute
   LogsRoute: typeof LogsRoute
-  MachinesRoute: typeof MachinesRoute
   SandboxesRoute: typeof SandboxesRoute
   SettingsRoute: typeof SettingsRoute
 }
@@ -148,13 +135,6 @@ declare module '@tanstack/react-router' {
       path: '/sandboxes'
       fullPath: '/sandboxes'
       preLoaderRoute: typeof SandboxesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines': {
-      id: '/machines'
-      path: '/machines'
-      fullPath: '/machines'
-      preLoaderRoute: typeof MachinesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logs': {
@@ -201,7 +181,6 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRoute,
   LoginRoute: LoginRoute,
   LogsRoute: LogsRoute,
-  MachinesRoute: MachinesRoute,
   SandboxesRoute: SandboxesRoute,
   SettingsRoute: SettingsRoute,
 }
