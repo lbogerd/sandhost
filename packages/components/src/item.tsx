@@ -53,13 +53,7 @@ type ItemProps = Omit<useRender.ComponentProps<"div">, "className"> &
 		className?: ClassValue
 	}
 
-function Item({
-	className,
-	variant = "default",
-	size = "default",
-	render,
-	...props
-}: ItemProps) {
+function Item({ className, variant = "default", size = "default", render, ...props }: ItemProps) {
 	return useRender({
 		defaultTagName: "div",
 		props: mergeProps<"div">(
