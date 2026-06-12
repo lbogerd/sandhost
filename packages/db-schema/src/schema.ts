@@ -184,11 +184,38 @@ export const sandbox = pgTable(
 	],
 )
 
+export const sandboxConfig = pgTable(
+	"sandbox_config",
+	{
+		id: text("id").primaryKey(),
+		name: text("name").notNull(),
+		sandboxName: text("sandbox_name"),
+		image: text("image"),
+		env: jsonb("env").$type<Record<string, string>>().notNull().default({}),
+		resources: jsonb("resources").$type<{
+			cpuLimit?: string
+			cpuRequest?: string
+			memoryLimit?: string
+			memoryRequest?: string
+		}>(),
+		createdByUserId: text("created_by_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt,
+		updatedAt,
+	},
+	(table) => [
+		index("sandboxConfig_createdByUserId_idx").on(table.createdByUserId),
+		index("sandboxConfig_name_idx").on(table.name),
+	],
+)
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
 	members: many(member),
 	sandboxes: many(sandbox),
+	sandboxConfigs: many(sandboxConfig),
 }))
 
 export const organizationRelations = relations(organization, ({ many }) => ({
@@ -228,6 +255,13 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const sandboxRelations = relations(sandbox, ({ one }) => ({
 	createdBy: one(user, {
 		fields: [sandbox.createdByUserId],
+		references: [user.id],
+	}),
+}))
+
+export const sandboxConfigRelations = relations(sandboxConfig, ({ one }) => ({
+	createdBy: one(user, {
+		fields: [sandboxConfig.createdByUserId],
 		references: [user.id],
 	}),
 }))

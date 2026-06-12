@@ -1,12 +1,10 @@
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router"
-import { Activity, Box, FileText, Home, Server, Settings } from "lucide-react"
+import { Activity, FileText, Home, Settings } from "lucide-react"
 import { Sidebar, type SidebarNavItem } from "../components/sidebar"
 import { Topbar } from "../components/topbar"
 
 const navItems = [
 	{ label: "Overview", icon: Home, to: "/" },
-	{ label: "Machines", icon: Server, to: "/machines" },
-	{ label: "Sandboxes", icon: Box, to: "/sandboxes" },
 	{ label: "Activity", icon: Activity, to: "/activity" },
 	{ label: "Logs", icon: FileText, to: "/logs" },
 	{ label: "Settings", icon: Settings, to: "/settings" },

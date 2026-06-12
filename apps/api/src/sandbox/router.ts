@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { ORPCError } from "@orpc/server"
 import { db } from "@wtrn/db"
-import { and, desc, eq, sandbox } from "@wtrn/db-schema"
+import { and, desc, eq, sandbox, sandboxConfig } from "@wtrn/db-schema"
 import { sandboxStatusSchema } from "@wtrn/rpc-contract"
 import { env } from "../env.ts"
 import { secured } from "../rpc.ts"
@@ -17,10 +17,68 @@ import { getKubernetesErrorMessage } from "./k8s.ts"
 import { buildSandboxPod, buildSandboxSecret, podNameForSandbox } from "./pod-spec.ts"
 
 type SandboxRow = typeof sandbox.$inferSelect
+type SandboxConfigRow = typeof sandboxConfig.$inferSelect
 
 const TERMINAL_STATUSES = new Set(["stopped", "failed"])
 
 export const sandboxRouter = {
+	config: {
+		create: secured.sandbox.config.create.handler(async ({ context, input }) => {
+			const resources =
+				input.resources && Object.values(input.resources).some(Boolean) ? input.resources : null
+
+			const insertedConfigs = await db
+				.insert(sandboxConfig)
+				.values({
+					createdByUserId: context.authSession.user.id,
+					env: input.env,
+					id: randomUUID(),
+					image: input.image ?? null,
+					name: input.name,
+					resources,
+					sandboxName: input.sandboxName ?? null,
+				})
+				.returning()
+			const insertedConfig = insertedConfigs[0]
+
+			if (!insertedConfig) {
+				throw new ORPCError("INTERNAL_SERVER_ERROR", {
+					message: "Failed to persist sandbox config",
+				})
+			}
+
+			return serializeSandboxConfig(insertedConfig)
+		}),
+		delete: secured.sandbox.config.delete.handler(async ({ context, input }) => {
+			const deletedConfigs = await db
+				.delete(sandboxConfig)
+				.where(
+					and(
+						eq(sandboxConfig.id, input.id),
+						eq(sandboxConfig.createdByUserId, context.authSession.user.id),
+					),
+				)
+				.returning({ id: sandboxConfig.id })
+			const deletedConfig = deletedConfigs[0]
+
+			if (!deletedConfig) {
+				throw new ORPCError("NOT_FOUND", {
+					message: "Sandbox config not found",
+				})
+			}
+
+			return deletedConfig
+		}),
+		list: secured.sandbox.config.list.handler(async ({ context }) => {
+			const configs = await db
+				.select()
+				.from(sandboxConfig)
+				.where(eq(sandboxConfig.createdByUserId, context.authSession.user.id))
+				.orderBy(desc(sandboxConfig.updatedAt))
+
+			return { configs: configs.map(serializeSandboxConfig) }
+		}),
+	},
 	create: secured.sandbox.create.handler(async ({ context, input }) => {
 		const id = randomUUID()
 		const image = input.image ?? env.SANDBOX_DEFAULT_IMAGE
@@ -190,5 +248,18 @@ function serializeSandbox(row: SandboxRow) {
 		startedAt: row.startedAt?.toISOString() ?? null,
 		status: sandboxStatusSchema.parse(row.status),
 		statusReason: row.statusReason,
+	}
+}
+
+function serializeSandboxConfig(row: SandboxConfigRow) {
+	return {
+		createdAt: row.createdAt.toISOString(),
+		env: row.env,
+		id: row.id,
+		image: row.image,
+		name: row.name,
+		resources: row.resources ?? null,
+		sandboxName: row.sandboxName,
+		updatedAt: row.updatedAt.toISOString(),
 	}
 }

@@ -1,11 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import type { Sandbox, SandboxStatus } from "@wtrn/rpc-contract"
-import { useEffect } from "react"
+import type { Sandbox, SandboxConfig, SandboxStatus } from "@wtrn/rpc-contract"
+import { useEffect, useState } from "react"
 import { orpc } from "../api.ts"
 import { Button } from "@wtrn/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@wtrn/components/card"
-import { Activity, AlertTriangle, Box, CircleStop, Plus, RefreshCw, Square } from "lucide-react"
+import {
+	Activity,
+	AlertTriangle,
+	Box,
+	CircleStop,
+	Plus,
+	RefreshCw,
+	Save,
+	Square,
+	Trash2,
+} from "lucide-react"
 import { cn } from "tailwind-variants"
 import {
 	Table,
@@ -16,6 +26,26 @@ import {
 	TableCell,
 } from "@wtrn/components/table"
 import { formatAge } from "../logic/formatAge"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@wtrn/components/dialog"
+import {
+	Form,
+	FormControl,
+	FormErrorList,
+	FormField,
+	FormLabel,
+	FormMessage,
+	FormSubmit,
+} from "@wtrn/components/form"
+import { FieldGroup } from "@wtrn/components/field"
+import { Input } from "@wtrn/components/input"
+import { Textarea } from "@wtrn/components/textarea"
+import * as z from "zod"
 
 export const Route = createFileRoute("/")({
 	component: Index,
@@ -27,6 +57,107 @@ const dotClassByStatus: Record<SandboxStatus, string> = {
 	stopping: "bg-amber-500",
 	stopped: "bg-slate-400",
 	failed: "bg-red-500",
+}
+
+const resourceQuantitySchema = z.string().refine((value) => {
+	const trimmed = value.trim()
+	return !trimmed || /^\d+(\.\d+)?(m|k|Ki|Mi|Gi|Ti|Pi|Ei|M|G|T|P|E)?$/.test(trimmed)
+}, "Invalid resource quantity")
+
+const createSandboxFormSchema = z.object({
+	configName: z.string(),
+	cpuLimit: resourceQuantitySchema,
+	cpuRequest: resourceQuantitySchema,
+	envText: z.string(),
+	image: z.string(),
+	intent: z.enum(["create", "save"]).default("create"),
+	memoryLimit: resourceQuantitySchema,
+	memoryRequest: resourceQuantitySchema,
+	name: z.string(),
+})
+
+type CreateSandboxFormValues = z.input<typeof createSandboxFormSchema> & {
+	[key: string]: FormDataEntryValue | FormDataEntryValue[]
+}
+
+function createEmptySandboxFormValues(): CreateSandboxFormValues {
+	return {
+		configName: "",
+		cpuLimit: "",
+		cpuRequest: "",
+		envText: "",
+		image: "",
+		intent: "create",
+		memoryLimit: "",
+		memoryRequest: "",
+		name: "",
+	}
+}
+
+function parseEnvLines(value: string): Record<string, string> {
+	const env: Record<string, string> = {}
+
+	for (const line of value.split("\n")) {
+		const trimmed = line.trim()
+		if (!trimmed) continue
+
+		const separatorIndex = trimmed.indexOf("=")
+		if (separatorIndex <= 0) continue
+
+		env[trimmed.slice(0, separatorIndex).trim()] = trimmed.slice(separatorIndex + 1)
+	}
+
+	return env
+}
+
+function formatEnvLines(env: Record<string, string>) {
+	return Object.entries(env)
+		.map(([key, value]) => `${key}=${value}`)
+		.join("\n")
+}
+
+function formValuesFromConfig(config: SandboxConfig): CreateSandboxFormValues {
+	return {
+		configName: config.name,
+		cpuLimit: config.resources?.cpuLimit ?? "",
+		cpuRequest: config.resources?.cpuRequest ?? "",
+		envText: formatEnvLines(config.env),
+		image: config.image ?? "",
+		intent: "create",
+		memoryLimit: config.resources?.memoryLimit ?? "",
+		memoryRequest: config.resources?.memoryRequest ?? "",
+		name: config.sandboxName ?? "",
+	}
+}
+
+function formValuesFromSubmission(
+	values: z.output<typeof createSandboxFormSchema>,
+): CreateSandboxFormValues {
+	return {
+		configName: values.configName,
+		cpuLimit: values.cpuLimit,
+		cpuRequest: values.cpuRequest,
+		envText: values.envText,
+		image: values.image,
+		intent: "create",
+		memoryLimit: values.memoryLimit,
+		memoryRequest: values.memoryRequest,
+		name: values.name,
+	}
+}
+
+function getSandboxPayload(values: z.output<typeof createSandboxFormSchema>) {
+	return {
+		env: parseEnvLines(values.envText),
+		image: values.image.trim() || undefined,
+		name: values.name.trim() || undefined,
+		resources: {
+			cpuLimit: values.cpuLimit.trim() || undefined,
+			cpuRequest: values.cpuRequest.trim() || undefined,
+			memoryLimit: values.memoryLimit.trim() || undefined,
+			memoryRequest: values.memoryRequest.trim() || undefined,
+		},
+	}
 }
 
 function StatusBadge({ sandbox }: { sandbox: Sandbox }) {
@@ -76,6 +207,245 @@ function StatCards({ sandboxes }: { sandboxes: Sandbox[] }) {
 	)
 }
 
+function CreateSandboxDialog({
+	onOpenChange,
+	open,
+}: {
+	onOpenChange: (open: boolean) => void
+	open: boolean
+}) {
+	const queryClient = useQueryClient()
+	const [formKey, setFormKey] = useState(0)
+	const [defaultValues, setDefaultValues] = useState<CreateSandboxFormValues>(
+		createEmptySandboxFormValues,
+	)
+
+	const configsQuery = useQuery(
+		orpc.sandbox.config.list.queryOptions({
+			enabled: open,
+			retry: false,
+		}),
+	)
+	const createSandboxMutation = useMutation(
+		orpc.sandbox.create.mutationOptions({
+			onSuccess: () => {
+				void queryClient.invalidateQueries({ queryKey: orpc.sandbox.key() })
+			},
+		}),
+	)
+	const createConfigMutation = useMutation(
+		orpc.sandbox.config.create.mutationOptions({
+			onSuccess: () => {
+				void queryClient.invalidateQueries({ queryKey: orpc.sandbox.config.key() })
+			},
+		}),
+	)
+	const deleteConfigMutation = useMutation(
+		orpc.sandbox.config.delete.mutationOptions({
+			onSuccess: () => {
+				void queryClient.invalidateQueries({ queryKey: orpc.sandbox.config.key() })
+			},
+		}),
+	)
+
+	const configs = configsQuery.data?.configs ?? []
+
+	function useConfig(id: string) {
+		const config = configs.find((candidate) => candidate.id === id)
+		const values = config ? formValuesFromConfig(config) : createEmptySandboxFormValues()
+
+		setDefaultValues(values)
+		setFormKey((key) => key + 1)
+	}
+
+	async function submit(values: z.output<typeof createSandboxFormSchema>) {
+		const payload = getSandboxPayload(values)
+
+		if (values.intent === "save") {
+			const configName = values.configName.trim()
+
+			if (!configName) {
+				throw new Error("Config name is required.")
+			}
+
+			await createConfigMutation.mutateAsync({
+				...payload,
+				name: configName,
+				sandboxName: payload.name,
+			})
+			setDefaultValues(formValuesFromSubmission(values))
+			setFormKey((key) => key + 1)
+			return
+		}
+
+		await createSandboxMutation.mutateAsync(payload)
+		setDefaultValues(createEmptySandboxFormValues())
+		setFormKey((key) => key + 1)
+		onOpenChange(false)
+	}
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-3xl">
+				<DialogHeader>
+					<DialogTitle>Create Sandbox</DialogTitle>
+					<DialogDescription>Start a pod from scratch or reuse a saved config.</DialogDescription>
+				</DialogHeader>
+
+				<div className="grid gap-5 lg:grid-cols-[220px_1fr]">
+					<section className="space-y-3">
+						<div className="flex items-center justify-between gap-2">
+							<h2 className="text-sm font-medium">Saved Configs</h2>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="h-7 px-2 text-xs"
+								onClick={() => useConfig("")}
+							>
+								Clear
+							</Button>
+						</div>
+						{configsQuery.isLoading && (
+							<p className="text-sm text-slate-500 dark:text-muted-foreground">
+								Loading configs...
+							</p>
+						)}
+						{configsQuery.isError && (
+							<p className="text-sm text-red-600 dark:text-red-400">
+								Failed to load configs: {configsQuery.error.message}
+							</p>
+						)}
+						{!configsQuery.isLoading && configs.length === 0 && (
+							<p className="text-sm text-slate-500 dark:text-muted-foreground">
+								No saved configs yet.
+							</p>
+						)}
+						<div className="space-y-2">
+							{configs.map((config) => (
+								<div
+									key={config.id}
+									className="rounded-lg border border-input p-2 text-sm dark:bg-input/20"
+								>
+									<div className="flex items-start justify-between gap-2">
+										<button
+											type="button"
+											className="min-w-0 flex-1 text-left"
+											onClick={() => useConfig(config.id)}
+										>
+											<span className="block truncate font-medium">{config.name}</span>
+											<span className="block truncate text-xs text-slate-500 dark:text-muted-foreground">
+												{config.image ?? "Default image"}
+											</span>
+										</button>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-xs"
+											className="text-red-600 dark:text-red-400"
+											disabled={deleteConfigMutation.isPending}
+											onClick={() => deleteConfigMutation.mutate({ id: config.id })}
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+											<span className="sr-only">Delete {config.name}</span>
+										</Button>
+									</div>
+								</div>
+							))}
+						</div>
+					</section>
+
+					<Form
+						key={formKey}
+						schema={createSandboxFormSchema}
+						defaultValues={defaultValues}
+						onSubmit={submit}
+					>
+						<FieldGroup>
+							<FormField name="configName">
+								<FormLabel>Config name</FormLabel>
+								<FormControl>
+									<Input placeholder="Small debug pod" />
+								</FormControl>
+								<FormMessage />
+							</FormField>
+							<div className="grid gap-4 md:grid-cols-2">
+								<FormField name="name">
+									<FormLabel>Sandbox name (optional)</FormLabel>
+									<FormControl>
+										<Input placeholder="my-agent" />
+									</FormControl>
+									<FormMessage />
+								</FormField>
+								<FormField name="image">
+									<FormLabel>Image (optional)</FormLabel>
+									<FormControl>
+										<Input placeholder="sandhost-agent:dev" />
+									</FormControl>
+									<FormMessage />
+								</FormField>
+							</div>
+							<div className="grid gap-4 md:grid-cols-4">
+								<FormField name="cpuRequest">
+									<FormLabel>CPU request</FormLabel>
+									<FormControl>
+										<Input placeholder="50m" />
+									</FormControl>
+									<FormMessage />
+								</FormField>
+								<FormField name="cpuLimit">
+									<FormLabel>CPU limit</FormLabel>
+									<FormControl>
+										<Input placeholder="250m" />
+									</FormControl>
+									<FormMessage />
+								</FormField>
+								<FormField name="memoryRequest">
+									<FormLabel>Memory request</FormLabel>
+									<FormControl>
+										<Input placeholder="64Mi" />
+									</FormControl>
+									<FormMessage />
+								</FormField>
+								<FormField name="memoryLimit">
+									<FormLabel>Memory limit</FormLabel>
+									<FormControl>
+										<Input placeholder="256Mi" />
+									</FormControl>
+									<FormMessage />
+								</FormField>
+							</div>
+							<FormField name="envText">
+								<FormLabel>Environment variables (KEY=VALUE per line)</FormLabel>
+								<FormControl>
+									<Textarea rows={3} placeholder={"AGENT_TOKEN=...\nLOG_LEVEL=debug"} />
+								</FormControl>
+								<FormMessage />
+							</FormField>
+							<FormErrorList />
+							<div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+								<FormSubmit
+									name="intent"
+									value="save"
+									variant="outline"
+									disabled={createConfigMutation.isPending}
+								>
+									<Save className="h-4 w-4" />
+									{createConfigMutation.isPending ? "Saving..." : "Save Config"}
+								</FormSubmit>
+								<FormSubmit name="intent" value="create" disabled={createSandboxMutation.isPending}>
+									<Plus className="h-4 w-4" />
+									{createSandboxMutation.isPending ? "Creating..." : "Create Sandbox"}
+								</FormSubmit>
+							</div>
+						</FieldGroup>
+					</Form>
+				</div>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
 function SandboxOverviewTable({
 	sandboxes,
 	isLoading,
@@ -83,7 +453,6 @@ function SandboxOverviewTable({
 	sandboxes: Sandbox[]
 	isLoading: boolean
 }) {
-	const navigate = useNavigate()
 	const queryClient = useQueryClient()
 	const invalidate = () => void queryClient.invalidateQueries({ queryKey: orpc.sandbox.key() })
 	const stopMutation = useMutation(orpc.sandbox.stop.mutationOptions({ onSuccess: invalidate }))
@@ -93,13 +462,6 @@ function SandboxOverviewTable({
 		<Card className="gap-0 overflow-hidden">
 			<CardHeader className="flex flex-row items-center justify-between border-b px-5 py-4">
 				<CardTitle className="text-base">Agent Sandboxes</CardTitle>
-				<Button
-					variant="link"
-					className="h-auto p-0 text-sm"
-					onClick={() => void navigate({ to: "/sandboxes" })}
-				>
-					Manage
-				</Button>
 			</CardHeader>
 			<CardContent className="p-0">
 				{sandboxes.length === 0 ? (
@@ -203,8 +565,13 @@ const toneClasses = {
 		"bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
 } as const
 
-function RightRail({ sandboxes }: { sandboxes: Sandbox[] }) {
-	const navigate = useNavigate()
+function RightRail({
+	onCreateSandbox,
+	sandboxes,
+}: {
+	onCreateSandbox: () => void
+	sandboxes: Sandbox[]
+}) {
 	const queryClient = useQueryClient()
 
 	const recent = [...sandboxes]
@@ -298,10 +665,7 @@ function RightRail({ sandboxes }: { sandboxes: Sandbox[] }) {
 					<CardTitle className="text-base">Quick Actions</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-3 px-4 pt-0">
-					<Button
-						className="h-11 w-full justify-start gap-3"
-						onClick={() => void navigate({ to: "/sandboxes" })}
-					>
+					<Button className="h-11 w-full justify-start gap-3" onClick={onCreateSandbox}>
 						<Plus className="h-4 w-4" />
 						Create Sandbox
 					</Button>
@@ -321,6 +685,7 @@ function RightRail({ sandboxes }: { sandboxes: Sandbox[] }) {
 
 function Index() {
 	const navigate = useNavigate()
+	const [createDialogOpen, setCreateDialogOpen] = useState(false)
 	const authStatusQuery = useQuery(
 		orpc.authStatus.queryOptions({
 			retry: false,
@@ -349,6 +714,7 @@ function Index() {
 
 	return (
 		<main className="flex min-w-0 flex-1 flex-col">
+			<CreateSandboxDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
 			<div className="flex flex-1 gap-4 p-4">
 				<section className="min-w-0 flex-1 space-y-4">
 					<StatCards sandboxes={sandboxes} />
@@ -357,9 +723,13 @@ function Index() {
 							Failed to load sandboxes: {listQuery.error.message}
 						</p>
 					)}
-					<SandboxOverviewTable sandboxes={sandboxes} isLoading={listQuery.isLoading} />
+					<SandboxOverviewTable
+						sandboxes={sandboxes}
+						isLoading={listQuery.isLoading}
+						onCreateSandbox={() => setCreateDialogOpen(true)}
+					/>
 				</section>
-				<RightRail sandboxes={sandboxes} />
+				<RightRail sandboxes={sandboxes} onCreateSandbox={() => setCreateDialogOpen(true)} />
 			</div>
 		</main>
 	)

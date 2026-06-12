@@ -23,6 +23,10 @@ const resourceQuantitySchema = z
 	.string()
 	.regex(/^\d+(\.\d+)?(m|k|Ki|Mi|Gi|Ti|Pi|Ei|M|G|T|P|E)?$/, "Invalid resource quantity")
 
+const envKeySchema = z
+	.string()
+	.regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Invalid environment variable name")
+
 export const sandboxResourcesSchema = z.object({
 	cpuLimit: resourceQuantitySchema.optional(),
 	cpuRequest: resourceQuantitySchema.optional(),
@@ -31,6 +35,27 @@ export const sandboxResourcesSchema = z.object({
 })
 
 export type SandboxResources = z.infer<typeof sandboxResourcesSchema>
+
+const sandboxConfigInputSchema = z.object({
+	env: z.record(envKeySchema, z.string()).default({}),
+	image: z.string().min(1).optional(),
+	name: z.string().min(1).max(80),
+	resources: sandboxResourcesSchema.optional(),
+	sandboxName: z.string().min(1).max(63).optional(),
+})
+
+export const sandboxConfigSchema = z.object({
+	createdAt: z.iso.datetime(),
+	env: z.record(z.string(), z.string()),
+	id: z.string(),
+	image: z.string().nullable(),
+	name: z.string(),
+	resources: sandboxResourcesSchema.nullable(),
+	sandboxName: z.string().nullable(),
+	updatedAt: z.iso.datetime(),
+})
+
+export type SandboxConfig = z.infer<typeof sandboxConfigSchema>
 
 export const sandboxSchema = z.object({
 	createdAt: z.iso.datetime(),
@@ -50,10 +75,6 @@ export const sandboxSchema = z.object({
 export type SandboxStatus = z.infer<typeof sandboxStatusSchema>
 export type Sandbox = z.infer<typeof sandboxSchema>
 
-const envKeySchema = z
-	.string()
-	.regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Invalid environment variable name")
-
 const createSandboxContract = oc
 	.input(
 		z.object({
@@ -65,6 +86,18 @@ const createSandboxContract = oc
 		}),
 	)
 	.output(sandboxSchema)
+
+const createSandboxConfigContract = oc.input(sandboxConfigInputSchema).output(sandboxConfigSchema)
+
+const deleteSandboxConfigContract = oc
+	.input(z.object({ id: z.string().min(1) }))
+	.output(z.object({ id: z.string().min(1) }))
+
+const listSandboxConfigsContract = oc.output(
+	z.object({
+		configs: z.array(sandboxConfigSchema),
+	}),
+)
 
 const getSandboxContract = oc.input(z.object({ id: z.string().min(1) })).output(sandboxSchema)
 
@@ -111,6 +144,11 @@ export const routerContract = oc.router({
 	authStatus: authStatusContract,
 	hello: helloWorldContract,
 	sandbox: oc.router({
+		config: oc.router({
+			create: createSandboxConfigContract,
+			delete: deleteSandboxConfigContract,
+			list: listSandboxConfigsContract,
+		}),
 		create: createSandboxContract,
 		exec: sandboxExecContract,
 		get: getSandboxContract,
